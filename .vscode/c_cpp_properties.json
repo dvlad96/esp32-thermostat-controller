@@ -10,6 +10,8 @@
             "includePath": [
                 "/home/dvlad/Documents/Projects/Smart-Home/include",
                 "/home/dvlad/Documents/Projects/Smart-Home/src",
+                "/home/dvlad/.platformio/packages/framework-arduinoespressif32/libraries/HTTPClient/src",
+                "/home/dvlad/.platformio/packages/framework-arduinoespressif32/libraries/WiFiClientSecure/src",
                 "/home/dvlad/Documents/Projects/Smart-Home/.pio/libdeps/upesy_wroom/HomeSpan/src",
                 "/home/dvlad/.platformio/packages/framework-arduinoespressif32/libraries/ArduinoOTA/src",
                 "/home/dvlad/.platformio/packages/framework-arduinoespressif32/libraries/Update/src",
@@ -214,7 +216,6 @@
                 "/home/dvlad/.platformio/packages/framework-arduinoespressif32/libraries/Ethernet/src",
                 "/home/dvlad/.platformio/packages/framework-arduinoespressif32/libraries/FFat/src",
                 "/home/dvlad/.platformio/packages/framework-arduinoespressif32/libraries/FS/src",
-                "/home/dvlad/.platformio/packages/framework-arduinoespressif32/libraries/HTTPClient/src",
                 "/home/dvlad/.platformio/packages/framework-arduinoespressif32/libraries/HTTPUpdate/src",
                 "/home/dvlad/.platformio/packages/framework-arduinoespressif32/libraries/HTTPUpdateServer/src",
                 "/home/dvlad/.platformio/packages/framework-arduinoespressif32/libraries/I2S/src",
@@ -231,7 +232,6 @@
                 "/home/dvlad/.platformio/packages/framework-arduinoespressif32/libraries/Ticker/src",
                 "/home/dvlad/.platformio/packages/framework-arduinoespressif32/libraries/USB/src",
                 "/home/dvlad/.platformio/packages/framework-arduinoespressif32/libraries/WebServer/src",
-                "/home/dvlad/.platformio/packages/framework-arduinoespressif32/libraries/WiFiClientSecure/src",
                 "/home/dvlad/.platformio/packages/framework-arduinoespressif32/libraries/WiFiProv/src",
                 "/home/dvlad/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src",
                 ""
@@ -241,6 +241,8 @@
                 "path": [
                     "/home/dvlad/Documents/Projects/Smart-Home/include",
                     "/home/dvlad/Documents/Projects/Smart-Home/src",
+                    "/home/dvlad/.platformio/packages/framework-arduinoespressif32/libraries/HTTPClient/src",
+                    "/home/dvlad/.platformio/packages/framework-arduinoespressif32/libraries/WiFiClientSecure/src",
                     "/home/dvlad/Documents/Projects/Smart-Home/.pio/libdeps/upesy_wroom/HomeSpan/src",
                     "/home/dvlad/.platformio/packages/framework-arduinoespressif32/libraries/ArduinoOTA/src",
                     "/home/dvlad/.platformio/packages/framework-arduinoespressif32/libraries/Update/src",
@@ -445,7 +447,6 @@
                     "/home/dvlad/.platformio/packages/framework-arduinoespressif32/libraries/Ethernet/src",
                     "/home/dvlad/.platformio/packages/framework-arduinoespressif32/libraries/FFat/src",
                     "/home/dvlad/.platformio/packages/framework-arduinoespressif32/libraries/FS/src",
-                    "/home/dvlad/.platformio/packages/framework-arduinoespressif32/libraries/HTTPClient/src",
                     "/home/dvlad/.platformio/packages/framework-arduinoespressif32/libraries/HTTPUpdate/src",
                     "/home/dvlad/.platformio/packages/framework-arduinoespressif32/libraries/HTTPUpdateServer/src",
                     "/home/dvlad/.platformio/packages/framework-arduinoespressif32/libraries/I2S/src",
@@ -462,7 +463,6 @@
                     "/home/dvlad/.platformio/packages/framework-arduinoespressif32/libraries/Ticker/src",
                     "/home/dvlad/.platformio/packages/framework-arduinoespressif32/libraries/USB/src",
                     "/home/dvlad/.platformio/packages/framework-arduinoespressif32/libraries/WebServer/src",
-                    "/home/dvlad/.platformio/packages/framework-arduinoespressif32/libraries/WiFiClientSecure/src",
                     "/home/dvlad/.platformio/packages/framework-arduinoespressif32/libraries/WiFiProv/src",
                     "/home/dvlad/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src",
                     ""
