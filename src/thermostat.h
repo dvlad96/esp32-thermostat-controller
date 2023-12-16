@@ -2,6 +2,7 @@
 #define THERMOSTAT_H
 
 #include "HomeSpan.h"
+#include "devices/daikin.h"
 
 /******** Typedef Defines ********/
 typedef enum {
@@ -12,8 +13,28 @@ typedef enum {
 } t_thermostatStates;
 
 
-struct HS_Thermostat : Service::Thermostat {
+struct HS_Thermostat : Service::Thermostat, daikin {
+private:
+    t_httpErrorCodes powerOnOffDaikin(bool power) {
+        t_httpErrorCodes daikinError;
+        uint8_t retry = 0;
 
+        do {
+            daikinError = this->powerOnOff(power);
+            retry++;
+
+            /* Wait 1 second before next retry */
+            delay(1000);
+        } while ((daikinError != E_REQUEST_SUCCESS) || (retry > DAIKIN_RETRY_MAX));
+
+        if (daikinError == E_REQUEST_FAILURE) {
+            Serial.println("Can not turn on/off Daikin");
+        }
+
+        return (daikinError);
+    }
+
+public:
     // Create characteristics, set initial values, and set storage in NVS to true
     Characteristic::CurrentHeatingCoolingState currentState{0, true};
     Characteristic::TargetHeatingCoolingState targetState{0, true};
@@ -25,22 +46,30 @@ struct HS_Thermostat : Service::Thermostat {
     Characteristic::CoolingThresholdTemperature coolingThreshold{22, true};
     Characteristic::TemperatureDisplayUnits displayUnits{0, true}; // this is for changing the display on the actual thermostat (if any), NOT in the Home App
 
-    HS_Thermostat() : Service::Thermostat() {
+    HS_Thermostat(char * daikinIpAddress, const int daikinPortId) : Service::Thermostat(), daikin(daikinIpAddress, daikinPortId) {
         Serial.printf("\n*** Creating HomeSpan Thermostat***\n");
         new SpanUserCommand('t', "<temp> - set the temperature, where temp is in F or C depending on configuration", setTemp, this);
     }
 
     boolean update() override {
+        t_httpErrorCodes daikinError;
+
         if (targetState.updated()) {
             switch (targetState.getNewVal()) {
                 case E_THERMOSTAT_STATE_OFF:
                     Serial.printf("Thermostat turning OFF\n");
+                    daikinError = this->powerOnOffDaikin(DAIKIN_POWER_OFF);
                     break;
                 case E_THERMOSTAT_STATE_HEAT:
                     Serial.printf("Thermostat set to HEAT at %s\n", temp2String(targetTemp.getVal<float>()).c_str());
+                    daikinError = this->powerOnOffDaikin(DAIKIN_POWER_OFF);
                     break;
                 case E_THERMOSTAT_STATE_COOL:
                     Serial.printf("Thermostat set to COOL at %s\n", temp2String(targetTemp.getVal<float>()).c_str());
+                    daikinError = this->powerOnOffDaikin(DAIKIN_POWER_ON);
+                    if (daikinError == E_REQUEST_SUCCESS) {
+                        daikinError = this->setTemperature(E_MODE_COOL, targetTemp.getVal<float>());
+                    }
                     break;
                 case E_THERMOSTAT_STATE_AUTO:
                     Serial.printf("Thermostat set to AUTO from %s to %s\n", temp2String(heatingThreshold.getVal<float>()).c_str(), temp2String(coolingThreshold.getVal<float>()).c_str());
@@ -52,6 +81,21 @@ struct HS_Thermostat : Service::Thermostat {
             Serial.printf("Temperature range changed to %s to %s\n", temp2String(heatingThreshold.getNewVal<float>()).c_str(), temp2String(coolingThreshold.getNewVal<float>()).c_str());
         } else if (targetTemp.updated()) {
             Serial.printf("Temperature target changed to %s\n", temp2String(targetTemp.getNewVal<float>()).c_str());
+            switch (currentState.getVal()) {
+                case E_THERMOSTAT_STATE_HEAT:
+                    break;
+
+                case E_THERMOSTAT_STATE_COOL:
+                    daikinError = this->setTemperature(E_MODE_COOL, targetTemp.getNewVal<float>());
+                    break;
+
+                case E_THERMOSTAT_STATE_AUTO:
+                    break;
+
+                case E_THERMOSTAT_STATE_OFF:
+                default:
+                    break;
+            }
         }
 
         if (displayUnits.updated()) {
@@ -73,6 +117,8 @@ struct HS_Thermostat : Service::Thermostat {
     }
 
     void loop() override {
+
+        t_httpErrorCodes daikinError;
 
         switch (targetState.getVal()) {
             case E_THERMOSTAT_STATE_OFF:
@@ -98,12 +144,24 @@ struct HS_Thermostat : Service::Thermostat {
             case E_THERMOSTAT_STATE_COOL:
                 if (currentTemp.getVal<float>() > targetTemp.getVal<float>() && currentState.getVal() != 2) {
                     Serial.printf("Turning COOL ON\n");
-                    currentState.setVal(2);
+                    daikinError = this->powerOnOffDaikin(DAIKIN_POWER_ON);
+                    if (daikinError == E_REQUEST_SUCCESS) {
+                        daikinError = this->setTemperature(E_MODE_COOL, targetTemp.getVal<float>());
+                        currentState.setVal(2);
+                    } else {
+                        /* Could not get a response from the cooling device */
+                    }
                 } else if (currentTemp.getVal<float>() <= targetTemp.getVal<float>() && currentState.getVal() == 2) {
                     Serial.printf("Turning COOL OFF\n");
-                    currentState.setVal(0);
+                    daikinError = this->powerOnOffDaikin(DAIKIN_POWER_OFF);
+                    if (daikinError == E_REQUEST_SUCCESS) {
+                        currentState.setVal(0);
+                    } else {
+                        /* Could not get a response from the cooling device */
+                    }
                 } else if (currentState.getVal() == 1) {
                     Serial.printf("Turning HEAT OFF\n");
+                    /** @todo Add heating devices */
                     currentState.setVal(0);
                 }
                 break;

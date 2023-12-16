@@ -3,7 +3,13 @@
 
 /* Local files */
 #include "thermostat.h"
+#include "devices/daikin.h"
 
+#define WIFI_SSID       ("DIGI-yYs4")
+#define WIFI_PASSWORD   ("7Az3A6D2Zz")
+
+#define DAIKIN_IP_ADDRESS   ("192.168.1.132")
+#define DAIKIN_PORT_ID      (80U)
 
 void setup() {
 
@@ -23,7 +29,7 @@ void setup() {
     new SpanAccessory();
         new Service::AccessoryInformation();
             new Characteristic::Identify();
-        new HS_Thermostat();
+        new HS_Thermostat((char *)DAIKIN_IP_ADDRESS, DAIKIN_PORT_ID);
 }
 
 void loop() {
