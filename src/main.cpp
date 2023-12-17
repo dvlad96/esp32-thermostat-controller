@@ -2,8 +2,8 @@
 #include "HomeSpan.h"
 
 /* Local files */
-#include "thermostat.h"
-#include "airConditioner.h"
+#include "homeKitAccessories/thermostat.h"
+#include "homeKitAccessories/airConditioner.h"
 #include "devices/daikin.h"
 
 #define WIFI_SSID       ("DIGI-yYs4")

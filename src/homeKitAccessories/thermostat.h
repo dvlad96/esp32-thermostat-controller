@@ -2,7 +2,7 @@
 #define THERMOSTAT_H
 
 #include "HomeSpan.h"
-#include "devices/daikin.h"
+#include "../devices/daikin.h"
 
 /******** Typedef Defines ********/
 typedef enum {

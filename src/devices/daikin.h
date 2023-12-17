@@ -60,13 +60,9 @@ typedef struct {
     t_fanDirection fanDirection;                /**< Device Fan Swing Direction */
 } t_deviceInfo;
 
-
 class daikin {
 
 private:
-    String ipAddress;
-    float portId;
-    float targetTemperature;
     HTTPClient http;
     String urlStart;
     t_deviceInfo currentDeviceSts;
@@ -74,13 +70,13 @@ private:
     t_httpErrorCodes getDeviceStatus(void);
 public:
     daikin(char * ipAddress, const int portId) {
-        this->ipAddress = ipAddress;
-        this->portId = portId;
         this->urlStart = "http://" + String(ipAddress) + ":" + String(portId) + "/aircon/";
     }
 
     t_httpErrorCodes powerOnOff(bool power);
     t_httpErrorCodes setTemperature(t_mode mode, const float newTemperature);
+    t_httpErrorCodes setFanSpeed(t_fanMode * speed);
+    t_httpErrorCodes setFanSwingMode(t_fanDirection swing);
 
 };
 

@@ -2,7 +2,7 @@
 #define AIR_CONDITIONER_H
 
 #include "HomeSpan.h"
-#include "devices/daikin.h"
+#include "../devices/daikin.h"
 
 /******** Typedef Defines ********/
 typedef enum {
@@ -38,26 +38,29 @@ struct HS_AirConditioner : Service::HeaterCooler, daikin {
         swingMode = new Characteristic::SwingMode();
         rotationSpeed = new Characteristic::RotationSpeed();
 
-        currentTemperature->setRange(-10, 100);
-        targetCoolingTemperature->setRange(18,30);
-        targetHeatingTemperature-> setRange(18,28);
+        currentTemperature->setRange(10, 30);
+        targetCoolingTemperature->setRange(10,30);
+        targetHeatingTemperature-> setRange(10,30);
     }
 
     boolean update() override {
         int newState;
         int isActive;
+        int fanSpeed;
+        int fanSwing;
         t_httpErrorCodes daikinError;
 
         if(active->updated()) {
             isActive = active->getNewVal();
 
-            if (isActive == 0) {
+            if (isActive == E_AC_STATE_OFF) {
                 daikinError = this->powerOnOffDaikin(DAIKIN_POWER_OFF);
             } else {
                 daikinError = this->powerOnOffDaikin(DAIKIN_POWER_ON);
             }
         }
 
+        /* Check if the Target State has been updated */
         if (targetState->updated()) {
             newState = targetState->getNewVal();
 
@@ -81,11 +84,41 @@ struct HS_AirConditioner : Service::HeaterCooler, daikin {
             }
         }
 
+        /* Check if the Fan Speed has been updated */
+        if (rotationSpeed->updated()) {
+            fanSpeed = rotationSpeed->getNewVal();
+            Serial.printf("New FAN SPEED = %d", fanSpeed);
+            //this->setFanSpeed(fanSpeed);
+        }
+
+        /* Check if the Fan Swing has been updated */
+        if (swingMode->updated()) {
+            fanSwing = swingMode->getNewVal();
+            Serial.printf("New FAN SWING = %d", fanSwing);
+            //this->setFanSwingMode(fanSwing);
+        }
+
         return (true);
     }
 
     void loop() override {
-
+        switch (currentState->getVal()) {
+            case E_AC_STATE_HEAT:
+                /* Check if the target temperature has changed */
+                if (targetHeatingTemperature->updated()) {
+                    this->setTemperature(E_MODE_HEAT, targetHeatingTemperature->getNewVal<float>());
+                }
+                break;
+            case E_AC_STATE_COOL:
+                /* Check if the target temperature has changed */
+                if (targetHeatingTemperature->updated()) {
+                    this->setTemperature(E_MODE_COOL, targetCoolingTemperature->getNewVal<float>());
+                }
+            case E_AC_STATE_OFF:
+            E_AC_STATE_AUTO:
+            default:
+                break;
+        }
     }
 
 private:

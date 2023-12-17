@@ -33,4 +33,4 @@
 *.elf
 
 # Build directory
-**/.pio/build
+.pio/build/
