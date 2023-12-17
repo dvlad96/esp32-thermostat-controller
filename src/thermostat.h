@@ -53,6 +53,7 @@ public:
 
     boolean update() override {
         t_httpErrorCodes daikinError;
+        float initialTemperature;
 
         if (targetState.updated()) {
             switch (targetState.getNewVal()) {
@@ -61,14 +62,16 @@ public:
                     daikinError = this->powerOnOffDaikin(DAIKIN_POWER_OFF);
                     break;
                 case E_THERMOSTAT_STATE_HEAT:
-                    Serial.printf("Thermostat set to HEAT at %s\n", temp2String(targetTemp.getVal<float>()).c_str());
+                    initialTemperature = targetTemp.getVal<float>();
+                    Serial.printf("Thermostat set to HEAT at %s\n", temp2String(initialTemperature).c_str());
                     daikinError = this->powerOnOffDaikin(DAIKIN_POWER_OFF);
                     break;
                 case E_THERMOSTAT_STATE_COOL:
-                    Serial.printf("Thermostat set to COOL at %s\n", temp2String(targetTemp.getVal<float>()).c_str());
+                    initialTemperature = targetTemp.getVal<float>();
+                    Serial.printf("Thermostat set to COOL at %s\n", temp2String(initialTemperature).c_str());
                     daikinError = this->powerOnOffDaikin(DAIKIN_POWER_ON);
                     if (daikinError == E_REQUEST_SUCCESS) {
-                        daikinError = this->setTemperature(E_MODE_COOL, targetTemp.getVal<float>());
+                        daikinError = this->setTemperature(E_MODE_COOL, initialTemperature);
                     }
                     break;
                 case E_THERMOSTAT_STATE_AUTO:

@@ -3,6 +3,7 @@
 
 /* Local files */
 #include "thermostat.h"
+#include "airConditioner.h"
 #include "devices/daikin.h"
 
 #define WIFI_SSID       ("DIGI-yYs4")
@@ -20,16 +21,26 @@ void setup() {
     homeSpan.setWifiCredentials(WIFI_SSID, WIFI_PASSWORD);
 #endif
 
-    /* Create a 6 digit pairing code */
+    /* Create a 8 digit pairing code */
     homeSpan.setPairingCode("00011000");
 
-    /* Create the Home Span accessory */
-    homeSpan.begin(Category::Thermostats, "HomeSpan Thermostat");
+    homeSpan.begin(Category::Bridges,"HomeSpan Bridge");
+
+    new SpanAccessory();                            // This first Accessory is the new "Bridge" Accessory.  It contains no functional Services, just the Accessory Information Service
+        new Service::AccessoryInformation();
+            new Characteristic::Identify();
 
     new SpanAccessory();
         new Service::AccessoryInformation();
             new Characteristic::Identify();
+            new Characteristic::Name("Room Thermostat");
         new HS_Thermostat((char *)DAIKIN_IP_ADDRESS, DAIKIN_PORT_ID);
+
+    new SpanAccessory();
+        new Service::AccessoryInformation();
+            new Characteristic::Identify();
+            new Characteristic::Name("Daikin AC");
+        new HS_AirConditioner((char *)DAIKIN_IP_ADDRESS, DAIKIN_PORT_ID);
 }
 
 void loop() {
