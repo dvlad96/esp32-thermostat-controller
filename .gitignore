@@ -32,5 +32,8 @@
 *.app
 *.elf
 
+# Generated files
+*.json
+
 # Build directory
 .pio/build/

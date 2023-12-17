@@ -1,18 +1,32 @@
 #ifndef THERMOSTAT_H
 #define THERMOSTAT_H
 
+/************************************************
+ *  Includes
+ ***********************************************/
 #include "HomeSpan.h"
-#include "../devices/daikin.h"
 
-/******** Typedef Defines ********/
+/* Local files */
+#include "devices/daikin.h"
+
+/************************************************
+ *  Defines / Macros
+ ***********************************************/
+
+/************************************************
+ *  Typedef definition
+ ***********************************************/
+/** @brief This enum represents all the possible states of a Home Kit Thermostat */
 typedef enum {
-    E_THERMOSTAT_STATE_OFF      = 0,
-    E_THERMOSTAT_STATE_HEAT     = 1,
-    E_THERMOSTAT_STATE_COOL     = 2,
-    E_THERMOSTAT_STATE_AUTO     = 3
+    E_THERMOSTAT_STATE_OFF      = 0,            /**< Thermostat OFF */
+    E_THERMOSTAT_STATE_HEAT     = 1,            /**< Thermostat set on HEAT mode */
+    E_THERMOSTAT_STATE_COOL     = 2,            /**< Thermostat set on COOL mode */
+    E_THERMOSTAT_STATE_AUTO     = 3             /**< Thermostat set on AUTO mode */
 } t_thermostatStates;
 
-
+/************************************************
+ *  Class definition
+ ***********************************************/
 struct HS_Thermostat : Service::Thermostat, daikin {
 private:
     t_httpErrorCodes powerOnOffDaikin(bool power) {

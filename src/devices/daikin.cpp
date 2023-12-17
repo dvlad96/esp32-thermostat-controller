@@ -1,12 +1,24 @@
-#include "daikin.h"
+/************************************************
+ *  Includes
+ ***********************************************/
 #include <tuple>
 
-/* -------------------- Defines / Macros -------------------- */
-#define HTTP_RESPONSE_NOT_OK    ("KO")
+/* Local files */
+#include "daikin.h"
 
-/* -------------------- Typedef defines --------------------- */
+/************************************************
+ *  Defines / Macros
+ ***********************************************/
+/** @brief This define represents a NOT OK response of a HTTP Request*/
+#define HTTP_RESPONSE_NOT_OK                ("KO")
 
-/* -------------------- Static function declaration -------------------- */
+/************************************************
+ *  Typedef definition
+ ***********************************************/
+
+/************************************************
+ *  Static function implementation
+ ***********************************************/
 static std::tuple<t_httpErrorCodes, String> getHttpResponse(HTTPClient * http, String url) {
 
     t_httpErrorCodes error;
@@ -95,7 +107,9 @@ static void unwrapDeviceStatus(String status, t_deviceInfo * const deviceInfo) {
     free(mutableInputString);
 }
 
-/* -------------------- Public method implementation  -------------------- */
+/************************************************
+ *  Public Method Implementation
+ ***********************************************/
 t_httpErrorCodes daikin::powerOnOff(bool power) {
     std::tuple<t_httpErrorCodes, String> status(E_REQUEST_FAILURE, "");
     t_httpErrorCodes getStsErr;
@@ -196,7 +210,9 @@ t_httpErrorCodes daikin::setFanSwingMode(t_fanDirection swing) {
     return (std::get<0>(status));
 }
 
-/* -------------------- Private method implementation  -------------------- */
+/************************************************
+ *  Private Method implementation
+ ***********************************************/
 t_httpErrorCodes daikin::getDeviceStatus(void) {
 
     std::tuple<t_httpErrorCodes, String> status(E_REQUEST_FAILURE, "");

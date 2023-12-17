@@ -1,17 +1,32 @@
 #ifndef AIR_CONDITIONER_H
 #define AIR_CONDITIONER_H
 
+/************************************************
+ *  Includes
+ ***********************************************/
 #include "HomeSpan.h"
-#include "../devices/daikin.h"
 
-/******** Typedef Defines ********/
+/* Local files */
+#include "devices/daikin.h"
+
+/************************************************
+ *  Defines / Macros
+ ***********************************************/
+
+/************************************************
+ *  Typedef definition
+ ***********************************************/
+/** @brief This enum represents all the possible states of a Home Kit AC */
 typedef enum {
-    E_AC_STATE_OFF      = 0,
-    E_AC_STATE_HEAT     = 1,
-    E_AC_STATE_COOL     = 2,
-    E_AC_STATE_AUTO     = 3
+    E_AC_STATE_OFF      = 0,            /**< AC OFF */
+    E_AC_STATE_HEAT     = 1,            /**< AC set on HEAT mode */
+    E_AC_STATE_COOL     = 2,            /**< AC set on COOL mode */
+    E_AC_STATE_AUTO     = 3             /**< AC set on AUTO mode */
 } t_acStates;
 
+/************************************************
+ *  Class definition
+ ***********************************************/
 struct HS_AirConditioner : Service::HeaterCooler, daikin {
 
     SpanCharacteristic *active;
