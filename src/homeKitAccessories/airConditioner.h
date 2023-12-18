@@ -18,10 +18,10 @@
  ***********************************************/
 /** @brief This enum represents all the possible states of a Home Kit AC */
 typedef enum {
-    E_AC_STATE_OFF      = 0,            /**< AC OFF */
-    E_AC_STATE_HEAT     = 1,            /**< AC set on HEAT mode */
-    E_AC_STATE_COOL     = 2,            /**< AC set on COOL mode */
-    E_AC_STATE_AUTO     = 3             /**< AC set on AUTO mode */
+    E_AC_STATE_OFF      = 0U,           /**< AC OFF */
+    E_AC_STATE_HEAT     = 1U,           /**< AC set on HEAT mode */
+    E_AC_STATE_COOL     = 2U,           /**< AC set on COOL mode */
+    E_AC_STATE_AUTO     = 3U            /**< AC set on AUTO mode */
 } t_acStates;
 
 /************************************************

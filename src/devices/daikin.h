@@ -31,17 +31,17 @@
  ***********************************************/
 /** @brief This enum represents the type of a HTTP Request */
 typedef enum {
-    E_GET_CONTROL_INFO = 0,         /**< Request to read AC active parameters */
-    E_SET_CONTROL_INFO = 1          /**< Request to modify AC active parameters */
+    E_GET_CONTROL_INFO = 0U,        /**< Request to read AC active parameters */
+    E_SET_CONTROL_INFO = 1U         /**< Request to modify AC active parameters */
 } t_requestType;
 
 /** @brief This enum represents the Daikin states */
 typedef enum {
-    E_MODE_AUTO = 1,                /**< AUTO mode */
-    E_MODE_DRY  = 2,                /**< Dehumidify mode */
-    E_MODE_COOL = 3,                /**< COOL mode */
-    E_MODE_HEAT = 4,                /**< HEAT mode */
-    E_MODE_FAN  = 6                 /**< Fan mode */
+    E_MODE_AUTO = 1U,               /**< AUTO mode */
+    E_MODE_DRY  = 2U,               /**< Dehumidify mode */
+    E_MODE_COOL = 3U,               /**< COOL mode */
+    E_MODE_HEAT = 4U,               /**< HEAT mode */
+    E_MODE_FAN  = 6U                /**< Fan mode */
 } t_mode;
 
 /** @brief This enum represent the Fan Rate Mode and Fan Speed */
@@ -57,10 +57,10 @@ typedef enum {
 
 /** @brief This enum represents the Fan Direction*/
 typedef enum {
-    E_STOP       = 0,               /**< Fan Stop */
-    E_VERTICAL   = 1,               /**< Vertical Swing */
-    E_HORIZONTAL = 2,               /**< Horizontal Swing */
-    E_ALL        = 3                /**< Swing in all directions */
+    E_STOP       = 0U,              /**< Fan Stop */
+    E_VERTICAL   = 1U,              /**< Vertical Swing */
+    E_HORIZONTAL = 2U,              /**< Horizontal Swing */
+    E_ALL        = 3U               /**< Swing in all directions */
 } t_fanDirection;
 
 /** @brief This structure is used for device status and device control */

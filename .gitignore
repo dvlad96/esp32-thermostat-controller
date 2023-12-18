@@ -37,3 +37,6 @@
 
 # Build directory
 .pio/build/
+
+# Private files
+private/

@@ -9,12 +9,12 @@
 #include "homeKitAccessories/airConditioner.h"
 #include "devices/daikin.h"
 
+/* Private files */
+#include "private/wifiCredentials.h"
+
 /************************************************
  *  Defines / Macros
  ***********************************************/
-/** @todo Find a way to hide the wifi credentials */
-#define WIFI_SSID               ("DIGI-yYs4")
-#define WIFI_PASSWORD           ("7Az3A6D2Zz")
 
 /** @brief Daikin AC IP Address */
 #define DAIKIN_IP_ADDRESS       ("192.168.1.132")

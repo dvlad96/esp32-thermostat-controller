@@ -18,10 +18,10 @@
  ***********************************************/
 /** @brief This enum represents all the possible states of a Home Kit Thermostat */
 typedef enum {
-    E_THERMOSTAT_STATE_OFF      = 0,            /**< Thermostat OFF */
-    E_THERMOSTAT_STATE_HEAT     = 1,            /**< Thermostat set on HEAT mode */
-    E_THERMOSTAT_STATE_COOL     = 2,            /**< Thermostat set on COOL mode */
-    E_THERMOSTAT_STATE_AUTO     = 3             /**< Thermostat set on AUTO mode */
+    E_THERMOSTAT_STATE_OFF      = 0U,           /**< Thermostat OFF */
+    E_THERMOSTAT_STATE_HEAT     = 1U,           /**< Thermostat set on HEAT mode */
+    E_THERMOSTAT_STATE_COOL     = 2U,           /**< Thermostat set on COOL mode */
+    E_THERMOSTAT_STATE_AUTO     = 3U            /**< Thermostat set on AUTO mode */
 } t_thermostatStates;
 
 /************************************************
