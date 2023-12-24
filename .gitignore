@@ -40,3 +40,6 @@
 
 # Private files
 private/
+
+# Examples
+examples/
