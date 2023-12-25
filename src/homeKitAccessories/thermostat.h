@@ -8,10 +8,14 @@
 
 /* Local files */
 #include "devices/daikin.h"
+#include "devices/heatingRelay.h"
+#include "homeKitAccessories/tempHumSensor.h"
 
 /************************************************
  *  Defines / Macros
  ***********************************************/
+#define THERMOSTAT_DEFAULT_TARGET_TEMPERATURE       (22U)
+#define THERMOSTAT_DEFAULT_TARGET_HUMIDITY          (50U)
 
 /************************************************
  *  Typedef definition
@@ -27,7 +31,7 @@ typedef enum {
 /************************************************
  *  Class definition
  ***********************************************/
-struct HS_Thermostat : Service::Thermostat, daikin {
+struct HS_Thermostat : Service::Thermostat, daikin, HS_TempHumSensor {
 private:
     t_httpErrorCodes powerOnOffDaikin(bool power) {
         t_httpErrorCodes daikinError;
@@ -52,17 +56,30 @@ public:
     // Create characteristics, set initial values, and set storage in NVS to true
     Characteristic::CurrentHeatingCoolingState currentState{0, true};
     Characteristic::TargetHeatingCoolingState targetState{0, true};
-    Characteristic::CurrentTemperature currentTemp{22, true};
-    Characteristic::TargetTemperature targetTemp{22, true};
-    Characteristic::CurrentRelativeHumidity currentHumidity{50, true};
-    Characteristic::TargetRelativeHumidity targetHumidity{50, true};
+    Characteristic::CurrentTemperature currentTemp{THERMOSTAT_DEFAULT_TARGET_TEMPERATURE, true};
+    Characteristic::TargetTemperature targetTemp{THERMOSTAT_DEFAULT_TARGET_TEMPERATURE, true};
+    Characteristic::CurrentRelativeHumidity currentHumidity{THERMOSTAT_DEFAULT_TARGET_TEMPERATURE, true};
+    Characteristic::TargetRelativeHumidity targetHumidity{THERMOSTAT_DEFAULT_TARGET_TEMPERATURE, true};
     Characteristic::HeatingThresholdTemperature heatingThreshold{22, true};
     Characteristic::CoolingThresholdTemperature coolingThreshold{22, true};
     Characteristic::TemperatureDisplayUnits displayUnits{0, true}; // this is for changing the display on the actual thermostat (if any), NOT in the Home App
 
-    HS_Thermostat(char * daikinIpAddress, const int daikinPortId) : Service::Thermostat(), daikin(daikinIpAddress, daikinPortId) {
+    HS_Thermostat(char * daikinIpAddress, const int daikinPortId,
+                  const uint8_t dhtPin, const uint8_t dhtType, const uint32_t dhtPollingTime) :
+                        Service::Thermostat(),
+                        daikin(daikinIpAddress, daikinPortId),
+                        HS_TempHumSensor(dhtPin, dhtType, dhtPollingTime) {
+
         Serial.printf("\n*** Creating HomeSpan Thermostat***\n");
-        new SpanUserCommand('t', "<temp> - set the temperature, where temp is in F or C depending on configuration", setTemp, this);
+
+        /* Set the initial values */
+        /* Temperature */
+        currentTemp.setVal(getTemperature());
+        targetTemp.setVal(THERMOSTAT_DEFAULT_TARGET_TEMPERATURE);
+        /* Humidity */
+        currentHumidity.setVal(getHumidity());
+        targetHumidity.setVal(THERMOSTAT_DEFAULT_TARGET_HUMIDITY);
+
     }
 
     boolean update() override {
@@ -73,19 +90,22 @@ public:
             switch (targetState.getNewVal()) {
                 case E_THERMOSTAT_STATE_OFF:
                     Serial.printf("Thermostat turning OFF\n");
-                    daikinError = this->powerOnOffDaikin(DAIKIN_POWER_OFF);
+                    daikinError = powerOnOffDaikin(DAIKIN_POWER_OFF);
+                    relayOnOff(HEATING_OFF);
                     break;
                 case E_THERMOSTAT_STATE_HEAT:
                     initialTemperature = targetTemp.getVal<float>();
                     Serial.printf("Thermostat set to HEAT at %s\n", temp2String(initialTemperature).c_str());
-                    daikinError = this->powerOnOffDaikin(DAIKIN_POWER_OFF);
+                    relayOnOff(HEATING_ON);
+                    daikinError = powerOnOffDaikin(DAIKIN_POWER_OFF);
                     break;
                 case E_THERMOSTAT_STATE_COOL:
                     initialTemperature = targetTemp.getVal<float>();
                     Serial.printf("Thermostat set to COOL at %s\n", temp2String(initialTemperature).c_str());
                     daikinError = this->powerOnOffDaikin(DAIKIN_POWER_ON);
+                    relayOnOff(HEATING_OFF);
                     if (daikinError == E_REQUEST_SUCCESS) {
-                        daikinError = this->setTemperature(E_MODE_COOL, initialTemperature);
+                        daikinError = setTemperature(E_MODE_COOL, initialTemperature);
                     }
                     break;
                 case E_THERMOSTAT_STATE_AUTO:
@@ -103,7 +123,7 @@ public:
                     break;
 
                 case E_THERMOSTAT_STATE_COOL:
-                    daikinError = this->setTemperature(E_MODE_COOL, targetTemp.getNewVal<float>());
+                    daikinError = setTemperature(E_MODE_COOL, targetTemp.getNewVal<float>());
                     break;
 
                 case E_THERMOSTAT_STATE_AUTO:
@@ -201,25 +221,6 @@ public:
                 }
                 break;
         }
-    }
-
-    static void setTemp(const char *buf, void *arg) {
-        HS_Thermostat *thermostat = (HS_Thermostat *)arg;
-
-        float temp = atof(buf + 1);
-        float tempC = temp;
-
-        if (thermostat->displayUnits.getVal()) {
-            tempC = (temp - 32.0) / 1.8;
-        }
-
-        if (tempC < 10.0 || tempC > 38.0) {
-            Serial.printf("usage: @t <temp>, where temp is in range of 10C (50F) through 38C (100F)\n\n");
-            return;
-        }
-
-        Serial.printf("Current temperature is now %.1f %c\n", temp, thermostat->displayUnits.getVal() ? 'F' : 'C');
-        thermostat->currentTemp.setVal(tempC);
     }
 };
 

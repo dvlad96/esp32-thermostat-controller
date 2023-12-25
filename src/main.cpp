@@ -9,6 +9,7 @@
 #include "homeKitAccessories/airConditioner.h"
 #include "homeKitAccessories/tempHumSensor.h"
 #include "devices/daikin.h"
+#include "devices/heatingRelay.h"
 
 /* Private files */
 #include "private/wifiCredentials.h"
@@ -26,6 +27,7 @@
 #define LIVING_ROOM_DHT_PIN             (5U)
 #define LIVING_ROOM_DHT_TYPE            (22U)
 #define LIVING_ROOM_DHT_POLLING_TIME    (5000U)
+
 /************************************************
  *  Typedef definition
  ***********************************************/
@@ -59,7 +61,8 @@ void setup() {
         new Service::AccessoryInformation();
             new Characteristic::Identify();
             new Characteristic::Name("Living Room Thermostat");
-        new HS_Thermostat((char *)DAIKIN_IP_ADDRESS, DAIKIN_PORT_ID);
+        new HS_Thermostat((char *)DAIKIN_IP_ADDRESS, DAIKIN_PORT_ID,
+                          LIVING_ROOM_DHT_PIN, LIVING_ROOM_DHT_TYPE, LIVING_ROOM_DHT_POLLING_TIME);
 
     /* 3. Living Room AC */
     new SpanAccessory();
@@ -74,6 +77,8 @@ void setup() {
             new Characteristic::Identify();
             new Characteristic::Name("Living Room Temperature");
         new HS_TempHumSensor(LIVING_ROOM_DHT_PIN, LIVING_ROOM_DHT_TYPE, LIVING_ROOM_DHT_POLLING_TIME);
+
+    relayCommunicationSetup();
 }
 
 void loop() {
