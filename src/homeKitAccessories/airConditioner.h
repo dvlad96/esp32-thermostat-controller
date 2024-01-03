@@ -8,6 +8,7 @@
 
 /* Local files */
 #include "devices/daikin.h"
+#include "devices/deviceInfo.h"
 
 /************************************************
  *  Defines / Macros
@@ -27,8 +28,9 @@ typedef enum {
 /************************************************
  *  Class definition
  ***********************************************/
-struct HS_AirConditioner : Service::HeaterCooler, daikin {
-
+struct HS_AirConditioner : Service::HeaterCooler {
+public:
+    /* Characteristic objects */
     SpanCharacteristic *active;
     SpanCharacteristic *currentTemperature;
     SpanCharacteristic *currentState;
@@ -39,9 +41,10 @@ struct HS_AirConditioner : Service::HeaterCooler, daikin {
     SpanCharacteristic *swingMode;
     SpanCharacteristic *rotationSpeed;
 
-    HS_AirConditioner(char * daikinIpAddress, const int daikinPortId) : Service::HeaterCooler(), daikin(daikinIpAddress, daikinPortId) {
+    daikin ac {(char *)DAIKIN_IP_ADDRESS, DAIKIN_PORT_ID};
+
+    HS_AirConditioner() : Service::HeaterCooler() {
         Serial.printf("\n*** Creating HomeSpan HeaterCooler***\n");
-        //new SpanUserCommand('t', "<temp> - set the temperature, where temp is in F or C depending on configuration", setTemp, this);
 
         active = new Characteristic::Active(); // active or not
         currentState = new Characteristic::CurrentHeaterCoolerState(); //current status, heating if below threshold, cooling if above, waiting...
@@ -59,58 +62,52 @@ struct HS_AirConditioner : Service::HeaterCooler, daikin {
     }
 
     boolean update() override {
-        int newState;
-        int isActive;
         int fanSpeed;
-        int fanSwing;
+        bool fanSwing;
         t_httpErrorCodes daikinError;
-
-        if(active->updated()) {
-            isActive = active->getNewVal();
-
-            if (isActive == E_AC_STATE_OFF) {
-                daikinError = this->powerOnOffDaikin(DAIKIN_POWER_OFF);
-            } else {
-                daikinError = this->powerOnOffDaikin(DAIKIN_POWER_ON);
-            }
-        }
 
         /* Check if the Target State has been updated */
         if (targetState->updated()) {
-            newState = targetState->getNewVal();
-
-            switch (newState) {
+            switch (targetState->getNewVal()) {
                 case E_AC_STATE_OFF:
                     Serial.printf("Thermostat turning OFF\n");
-                    daikinError = this->powerOnOffDaikin(DAIKIN_POWER_OFF);
+                    daikinError = powerOnOffDaikin(DAIKIN_POWER_OFF);
                     break;
                 case E_AC_STATE_HEAT:
                     Serial.printf("Thermostat set to HEAT at %s\n", temp2String(targetHeatingTemperature->getVal<float>()).c_str());
-                    daikinError = this->setTemperature(E_MODE_HEAT, targetHeatingTemperature->getVal<float>());
+                    daikinError = ac.setTemperature(E_MODE_HEAT, targetHeatingTemperature->getVal<float>());
                     break;
                 case E_AC_STATE_COOL:
                     Serial.printf("Thermostat set to COOL at %s\n", temp2String(targetCoolingTemperature->getVal<float>()).c_str());
-                    daikinError = this->setTemperature(E_MODE_COOL, targetCoolingTemperature->getVal<float>());
+                    daikinError = ac.setTemperature(E_MODE_COOL, targetCoolingTemperature->getVal<float>());
                     break;
                 case E_AC_STATE_AUTO:
-                    daikinError = this->powerOnOffDaikin(DAIKIN_POWER_OFF);
+                    daikinError = powerOnOffDaikin(DAIKIN_POWER_OFF);
                     Serial.printf("Thermostat set to AUTO from %s to %s\n", temp2String(targetHeatingTemperature->getVal<float>()).c_str(), temp2String(targetCoolingTemperature->getVal<float>()).c_str());
                     break;
             }
+        }
+
+        if (targetCoolingTemperature->updated()) {
+            (void)ac.setTemperature(E_MODE_COOL, targetCoolingTemperature->getNewVal<float>());
+        }
+
+        if (targetHeatingTemperature->updated()) {
+            (void)ac.setTemperature(E_MODE_HEAT, targetHeatingTemperature->getNewVal<float>());
         }
 
         /* Check if the Fan Speed has been updated */
         if (rotationSpeed->updated()) {
             fanSpeed = rotationSpeed->getNewVal();
             Serial.printf("New FAN SPEED = %d", fanSpeed);
-            //this->setFanSpeed(fanSpeed);
+            ac.setFanSpeed(M_SET_FAN_SPEED(fanSpeed));
         }
 
         /* Check if the Fan Swing has been updated */
         if (swingMode->updated()) {
-            fanSwing = swingMode->getNewVal();
+            fanSwing = swingMode->getNewVal<bool>();
             Serial.printf("New FAN SWING = %d", fanSwing);
-            //this->setFanSwingMode(fanSwing);
+            ac.setFanSwingMode(fanSwing == false ? E_STOP : E_ALL);
         }
 
         return (true);
@@ -121,18 +118,27 @@ struct HS_AirConditioner : Service::HeaterCooler, daikin {
             case E_AC_STATE_HEAT:
                 /* Check if the target temperature has changed */
                 if (targetHeatingTemperature->updated()) {
-                    this->setTemperature(E_MODE_HEAT, targetHeatingTemperature->getNewVal<float>());
+                    ac.setTemperature(E_MODE_HEAT, targetHeatingTemperature->getNewVal<float>());
                 }
                 break;
             case E_AC_STATE_COOL:
                 /* Check if the target temperature has changed */
                 if (targetHeatingTemperature->updated()) {
-                    this->setTemperature(E_MODE_COOL, targetCoolingTemperature->getNewVal<float>());
+                    ac.setTemperature(E_MODE_COOL, targetCoolingTemperature->getNewVal<float>());
                 }
             case E_AC_STATE_OFF:
             E_AC_STATE_AUTO:
             default:
                 break;
+        }
+
+        /* Once every 5 minutes, check the sensor temperature */
+        if (currentTemperature->timeVal() > DAIKIN_AC_TEMPERATURE_REFRESH) {
+            float readoutTemperature = 0;
+            (void)ac.getCurrentTemperature(&readoutTemperature);
+
+            currentTemperature->setVal(readoutTemperature);
+            Serial.printf("AC: New readout temperature = %.2f \n", readoutTemperature);
         }
     }
 
@@ -142,7 +148,7 @@ private:
         uint8_t retry = 0;
 
         do {
-            daikinError = this->powerOnOff(power);
+            daikinError = ac.powerOnOff(power);
             retry++;
 
             /* Wait 1 second before next retry */

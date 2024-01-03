@@ -14,6 +14,7 @@
 /************************************************
  *  Defines / Macros
  ***********************************************/
+
 #define THERMOSTAT_DEFAULT_TARGET_TEMPERATURE       (22U)
 #define THERMOSTAT_DEFAULT_TARGET_HUMIDITY          (50U)
 
@@ -31,14 +32,219 @@ typedef enum {
 /************************************************
  *  Class definition
  ***********************************************/
-struct HS_Thermostat : Service::Thermostat, daikin, HS_TempHumSensor {
+struct HS_Thermostat : Service::Thermostat {
+public:
+    // Create characteristics, set initial values, and set storage in NVS to true
+    Characteristic::CurrentHeatingCoolingState currentState{0, true};
+    Characteristic::TargetHeatingCoolingState targetState{0, true};
+    Characteristic::CurrentTemperature currentTemp{THERMOSTAT_DEFAULT_TARGET_TEMPERATURE, true};
+    Characteristic::TargetTemperature targetTemp{THERMOSTAT_DEFAULT_TARGET_TEMPERATURE, true};
+    Characteristic::CurrentRelativeHumidity currentHumidity{THERMOSTAT_DEFAULT_TARGET_TEMPERATURE, true};
+    Characteristic::TargetRelativeHumidity targetHumidity{THERMOSTAT_DEFAULT_TARGET_TEMPERATURE, true};
+    Characteristic::HeatingThresholdTemperature heatingThreshold{22, true};
+    Characteristic::CoolingThresholdTemperature coolingThreshold{22, true};
+    Characteristic::TemperatureDisplayUnits displayUnits{0, true};
+
+    DHT tempHumSensor {DHT_PIN, DHT_TYPE};
+    daikin coolingDevice {(char *)DAIKIN_IP_ADDRESS, DAIKIN_PORT_ID};
+
+    HS_Thermostat() : Service::Thermostat() {
+
+        /* Initialize DHT sensor */
+        tempHumSensor.begin();
+
+        /* Set the initial values */
+        currentTemp.setVal(tempHumSensor.readTemperature());
+        currentTemp.setRange(DHT_TEMPERATURE_DEFAULT_MIN_VAL, DHT_TEMPERATURE_DEFAULT_MAX_VAL);
+        targetTemp.setVal(THERMOSTAT_DEFAULT_TARGET_TEMPERATURE);
+        targetTemp.setRange(DHT_TEMPERATURE_DEFAULT_MIN_VAL, DHT_TEMPERATURE_DEFAULT_MAX_VAL);
+
+        currentHumidity.setVal(tempHumSensor.readHumidity());
+        currentHumidity.setRange(DHT_HUMIDITY_DEFAULT_MIN_RANGE, DHT_HUMIDITY_DEFAULT_MAX_RANGE);
+        targetHumidity.setVal(THERMOSTAT_DEFAULT_TARGET_HUMIDITY);
+        currentHumidity.setRange(DHT_HUMIDITY_DEFAULT_MIN_RANGE, DHT_HUMIDITY_DEFAULT_MAX_RANGE);
+
+        heatingThreshold.setRange(0, 30);
+        coolingThreshold.setRange(0, 30);
+    }
+
+    boolean update() override {
+        if (targetState.updated()) {
+            switch(targetState.getNewVal()) {
+                case E_THERMOSTAT_STATE_OFF:
+                    Serial.printf("Thermostat turning OFF\n");
+
+                    if (coolingDevice.getPowerState() == DAIKIN_POWER_ON) {
+                        (void)powerOnOffDaikin(DAIKIN_POWER_OFF);
+                    } else {
+                        /* AC already turned OFF */
+                    }
+                    break;
+
+                case E_THERMOSTAT_STATE_HEAT:
+                    Serial.printf("Thermostat set to HEAT at %s\n",
+                                   temp2String(targetTemp.getVal<float>()).c_str());
+
+                    if (coolingDevice.getPowerState() == DAIKIN_POWER_ON) {
+                        (void)powerOnOffDaikin(DAIKIN_POWER_OFF);
+                    } else {
+                        /* AC already turned OFF */
+                    }
+                    break;
+
+                case E_THERMOSTAT_STATE_COOL:
+                    Serial.printf("Thermostat set to COOL at %s\n",
+                                  temp2String(targetTemp.getVal<float>()).c_str());
+                    if (coolingDevice.getPowerState() == DAIKIN_POWER_OFF) {
+                        (void)powerOnOffDaikin(DAIKIN_POWER_ON);
+                    } else {
+                        /* AC already turned OFF */
+                    }
+                    break;
+
+                case E_THERMOSTAT_STATE_AUTO:
+                    Serial.printf("Thermostat set to AUTO from %s to %s\n",
+                                  temp2String(heatingThreshold.getVal<float>()).c_str(),temp2String(coolingThreshold.getVal<float>()).c_str());
+                    break;
+            }
+        }
+
+        if (heatingThreshold.updated() || coolingThreshold.updated()) {
+            Serial.printf("Temperature range changed to %s to %s\n",
+                          temp2String(heatingThreshold.getNewVal<float>()).c_str(), temp2String(coolingThreshold.getNewVal<float>()).c_str());
+        }
+
+        else if (targetTemp.updated()) {
+            Serial.printf("Temperature target changed to %s\n",
+                           temp2String(targetTemp.getNewVal<float>()).c_str());
+
+            /* Update the new value only if the AC is on */
+            if ((currentState.getVal() == E_THERMOSTAT_STATE_COOL) &&
+                (true == coolingDevice.getPowerState())) {
+                /* Set the new AC target temperature */
+                (void)coolingDevice.setTemperature(E_MODE_COOL, targetTemp.getNewVal<float>());
+            } else {
+                /* Do nothing */
+            }
+        }
+
+        if (displayUnits.updated()) {
+            Serial.printf("Display Units changed to %c\n",displayUnits.getNewVal()?'F':'C');
+        }
+
+        if (targetHumidity.updated()) {
+            Serial.printf("Humidity target changed to %d%%\n",targetHumidity.getNewVal());
+        }
+
+        return(true);
+    }
+
+void loop() override {
+
+        float temp = tempHumSensor.readTemperature();
+
+        /* Update the temperature values in case they are out of range */
+        if (temp < DHT_TEMPERATURE_DEFAULT_MIN_VAL) {
+            temp = DHT_TEMPERATURE_DEFAULT_MIN_VAL;
+        }
+
+        if (temp > DHT_TEMPERATURE_DEFAULT_MAX_VAL) {
+            temp = DHT_TEMPERATURE_DEFAULT_MAX_VAL;
+        }
+
+        /* If it's been more than DHT_POLLING_TIME seconds since last update, and temperature has changed */
+        if (currentTemp.timeVal() > DHT_POLLING_TIME && fabs(currentTemp.getVal<float>() - temp) > 0.25) {
+            currentTemp.setVal(temp);
+            Serial.printf("Current Temperature is now %s.\n", temp2String(currentTemp.getNewVal<float>()).c_str());
+        }
+
+        switch(targetState.getVal()) {
+            case E_THERMOSTAT_STATE_OFF:
+                if (currentState.getVal() != E_THERMOSTAT_STATE_OFF) {
+                    Serial.printf("Thermostat OFF\n");
+                    currentState.setVal(0);
+                    if (coolingDevice.getPowerState() == DAIKIN_POWER_ON) {
+                        (void)powerOnOffDaikin(DAIKIN_POWER_OFF);
+                    }
+                }
+                break;
+
+            case E_THERMOSTAT_STATE_HEAT:
+                if (currentTemp.getVal<float>() < targetTemp.getVal<float>() && currentState.getVal() != E_THERMOSTAT_STATE_HEAT) {
+                    Serial.printf("Turning HEAT ON\n");
+                    currentState.setVal(1);
+
+                } else if (currentTemp.getVal<float>() >= targetTemp.getVal<float>() && currentState.getVal() == E_THERMOSTAT_STATE_HEAT) {
+                    Serial.printf("Turning HEAT OFF\n");
+                    currentState.setVal(0);
+
+                } else if (currentState.getVal() == E_THERMOSTAT_STATE_COOL) {
+                    Serial.printf("Turning COOL OFF\n");
+                    if (coolingDevice.getPowerState() == DAIKIN_POWER_ON) {
+                        (void)powerOnOffDaikin(DAIKIN_POWER_OFF);
+                    }
+                    currentState.setVal(0);
+                }
+                break;
+
+            case E_THERMOSTAT_STATE_COOL:
+                if (currentTemp.getVal<float>() > targetTemp.getVal<float>() && currentState.getVal() != E_THERMOSTAT_STATE_COOL) {
+                    Serial.printf("Turning COOL ON\n");
+                    if (coolingDevice.getPowerState() == DAIKIN_POWER_OFF) {
+                        (void)powerOnOffDaikin(DAIKIN_POWER_ON);
+                    }
+
+                    (void)coolingDevice.setTemperature(E_MODE_COOL, targetTemp.getVal<float>());
+                    currentState.setVal(2);
+
+                } else if (currentTemp.getVal<float>() <= targetTemp.getVal<float>() && currentState.getVal() == E_THERMOSTAT_STATE_COOL) {
+                    Serial.printf("Turning COOL OFF\n");
+                    if (coolingDevice.getPowerState() == DAIKIN_POWER_ON) {
+                        (void)powerOnOffDaikin(DAIKIN_POWER_OFF);
+                    }
+                    currentState.setVal(0);
+
+                } else if (currentState.getVal() == E_THERMOSTAT_STATE_HEAT) {
+                    Serial.printf("Turning HEAT OFF\n");
+                    currentState.setVal(0);
+                }
+                break;
+
+            case E_THERMOSTAT_STATE_AUTO:
+                if (currentTemp.getVal<float>() < heatingThreshold.getVal<float>() && currentState.getVal() != E_THERMOSTAT_STATE_HEAT) {
+                    Serial.printf("Turning HEAT ON\n");
+                    currentState.setVal(1);
+
+                } else if (currentTemp.getVal<float>() >= heatingThreshold.getVal<float>() && currentState.getVal() == E_THERMOSTAT_STATE_HEAT) {
+                    Serial.printf("Turning HEAT OFF\n");
+                    currentState.setVal(0);
+                }
+
+                if (currentTemp.getVal<float>() > coolingThreshold.getVal<float>() && currentState.getVal() != E_THERMOSTAT_STATE_COOL) {
+                    Serial.printf("Turning COOL ON\n");
+                    if (coolingDevice.getPowerState() == DAIKIN_POWER_OFF) {
+                        (void)powerOnOffDaikin(DAIKIN_POWER_ON);
+                    }
+                    currentState.setVal(2);
+
+                } else if (currentTemp.getVal<float>() <= coolingThreshold.getVal<float>() && currentState.getVal() == E_THERMOSTAT_STATE_COOL) {
+                    Serial.printf("Turning COOL OFF\n");
+                    if (coolingDevice.getPowerState() == DAIKIN_POWER_ON) {
+                        (void)powerOnOffDaikin(DAIKIN_POWER_OFF);
+                    }
+                    currentState.setVal(0);
+                }
+                break;
+        }
+    }
+
 private:
     t_httpErrorCodes powerOnOffDaikin(bool power) {
         t_httpErrorCodes daikinError;
         uint8_t retry = 0;
 
         do {
-            daikinError = this->powerOnOff(power);
+            daikinError = coolingDevice.powerOnOff(power);
             retry++;
 
             /* Wait 1 second before next retry */
@@ -52,175 +258,10 @@ private:
         return (daikinError);
     }
 
-public:
-    // Create characteristics, set initial values, and set storage in NVS to true
-    Characteristic::CurrentHeatingCoolingState currentState{0, true};
-    Characteristic::TargetHeatingCoolingState targetState{0, true};
-    Characteristic::CurrentTemperature currentTemp{THERMOSTAT_DEFAULT_TARGET_TEMPERATURE, true};
-    Characteristic::TargetTemperature targetTemp{THERMOSTAT_DEFAULT_TARGET_TEMPERATURE, true};
-    Characteristic::CurrentRelativeHumidity currentHumidity{THERMOSTAT_DEFAULT_TARGET_TEMPERATURE, true};
-    Characteristic::TargetRelativeHumidity targetHumidity{THERMOSTAT_DEFAULT_TARGET_TEMPERATURE, true};
-    Characteristic::HeatingThresholdTemperature heatingThreshold{22, true};
-    Characteristic::CoolingThresholdTemperature coolingThreshold{22, true};
-    Characteristic::TemperatureDisplayUnits displayUnits{0, true}; // this is for changing the display on the actual thermostat (if any), NOT in the Home App
-
-    HS_Thermostat(char * daikinIpAddress, const int daikinPortId,
-                  const uint8_t dhtPin, const uint8_t dhtType, const uint32_t dhtPollingTime) :
-                        Service::Thermostat(),
-                        daikin(daikinIpAddress, daikinPortId),
-                        HS_TempHumSensor(dhtPin, dhtType, dhtPollingTime) {
-
-        Serial.printf("\n*** Creating HomeSpan Thermostat***\n");
-
-        /* Set the initial values */
-        /* Temperature */
-        currentTemp.setVal(getTemperature());
-        targetTemp.setVal(THERMOSTAT_DEFAULT_TARGET_TEMPERATURE);
-        /* Humidity */
-        currentHumidity.setVal(getHumidity());
-        targetHumidity.setVal(THERMOSTAT_DEFAULT_TARGET_HUMIDITY);
-
-    }
-
-    boolean update() override {
-        t_httpErrorCodes daikinError;
-        float initialTemperature;
-
-        if (targetState.updated()) {
-            switch (targetState.getNewVal()) {
-                case E_THERMOSTAT_STATE_OFF:
-                    Serial.printf("Thermostat turning OFF\n");
-                    daikinError = powerOnOffDaikin(DAIKIN_POWER_OFF);
-                    relayOnOff(HEATING_OFF);
-                    break;
-                case E_THERMOSTAT_STATE_HEAT:
-                    initialTemperature = targetTemp.getVal<float>();
-                    Serial.printf("Thermostat set to HEAT at %s\n", temp2String(initialTemperature).c_str());
-                    relayOnOff(HEATING_ON);
-                    daikinError = powerOnOffDaikin(DAIKIN_POWER_OFF);
-                    break;
-                case E_THERMOSTAT_STATE_COOL:
-                    initialTemperature = targetTemp.getVal<float>();
-                    Serial.printf("Thermostat set to COOL at %s\n", temp2String(initialTemperature).c_str());
-                    daikinError = this->powerOnOffDaikin(DAIKIN_POWER_ON);
-                    relayOnOff(HEATING_OFF);
-                    if (daikinError == E_REQUEST_SUCCESS) {
-                        daikinError = setTemperature(E_MODE_COOL, initialTemperature);
-                    }
-                    break;
-                case E_THERMOSTAT_STATE_AUTO:
-                    Serial.printf("Thermostat set to AUTO from %s to %s\n", temp2String(heatingThreshold.getVal<float>()).c_str(), temp2String(coolingThreshold.getVal<float>()).c_str());
-                    break;
-            }
-        }
-
-        if (heatingThreshold.updated() || coolingThreshold.updated()) {
-            Serial.printf("Temperature range changed to %s to %s\n", temp2String(heatingThreshold.getNewVal<float>()).c_str(), temp2String(coolingThreshold.getNewVal<float>()).c_str());
-        } else if (targetTemp.updated()) {
-            Serial.printf("Temperature target changed to %s\n", temp2String(targetTemp.getNewVal<float>()).c_str());
-            switch (currentState.getVal()) {
-                case E_THERMOSTAT_STATE_HEAT:
-                    break;
-
-                case E_THERMOSTAT_STATE_COOL:
-                    daikinError = setTemperature(E_MODE_COOL, targetTemp.getNewVal<float>());
-                    break;
-
-                case E_THERMOSTAT_STATE_AUTO:
-                    break;
-
-                case E_THERMOSTAT_STATE_OFF:
-                default:
-                    break;
-            }
-        }
-
-        if (displayUnits.updated()) {
-            Serial.printf("Display Units changed to %c\n", displayUnits.getNewVal() ? 'F' : 'C');
-        }
-
-        if (targetHumidity.updated()) {
-            Serial.printf("Humidity target changed to %d%%\n", targetHumidity.getNewVal());
-        }
-
-        return (true);
-    }
-
-    // This optional function makes it easy to display temperatures on the serial monitor in either F or C depending on TemperatureDisplayUnits
     String temp2String(float temp) {
         String t = displayUnits.getVal() ? String(round(temp * 1.8 + 32.0)) : String(temp);
         t += displayUnits.getVal() ? " F" : " C";
         return (t);
-    }
-
-    void loop() override {
-
-        t_httpErrorCodes daikinError;
-
-        switch (targetState.getVal()) {
-            case E_THERMOSTAT_STATE_OFF:
-                if (currentState.getVal() != 0) {
-                    Serial.printf("Thermostat OFF\n");
-                    currentState.setVal(0);
-                }
-                break;
-
-            case E_THERMOSTAT_STATE_HEAT:
-                if (currentTemp.getVal<float>() < targetTemp.getVal<float>() && currentState.getVal() != 1) {
-                    Serial.printf("Turning HEAT ON\n");
-                    currentState.setVal(1);
-                } else if (currentTemp.getVal<float>() >= targetTemp.getVal<float>() && currentState.getVal() == 1) {
-                    Serial.printf("Turning HEAT OFF\n");
-                    currentState.setVal(0);
-                } else if (currentState.getVal() == 2) {
-                    Serial.printf("Turning COOL OFF\n");
-                    currentState.setVal(0);
-                }
-                break;
-
-            case E_THERMOSTAT_STATE_COOL:
-                if (currentTemp.getVal<float>() > targetTemp.getVal<float>() && currentState.getVal() != 2) {
-                    Serial.printf("Turning COOL ON\n");
-                    daikinError = this->powerOnOffDaikin(DAIKIN_POWER_ON);
-                    if (daikinError == E_REQUEST_SUCCESS) {
-                        daikinError = this->setTemperature(E_MODE_COOL, targetTemp.getVal<float>());
-                        currentState.setVal(2);
-                    } else {
-                        /* Could not get a response from the cooling device */
-                    }
-                } else if (currentTemp.getVal<float>() <= targetTemp.getVal<float>() && currentState.getVal() == 2) {
-                    Serial.printf("Turning COOL OFF\n");
-                    daikinError = this->powerOnOffDaikin(DAIKIN_POWER_OFF);
-                    if (daikinError == E_REQUEST_SUCCESS) {
-                        currentState.setVal(0);
-                    } else {
-                        /* Could not get a response from the cooling device */
-                    }
-                } else if (currentState.getVal() == 1) {
-                    Serial.printf("Turning HEAT OFF\n");
-                    /** @todo Add heating devices */
-                    currentState.setVal(0);
-                }
-                break;
-
-            case E_THERMOSTAT_STATE_AUTO:
-                if (currentTemp.getVal<float>() < heatingThreshold.getVal<float>() && currentState.getVal() != 1) {
-                    Serial.printf("Turning HEAT ON\n");
-                    currentState.setVal(1);
-                } else if (currentTemp.getVal<float>() >= heatingThreshold.getVal<float>() && currentState.getVal() == 1) {
-                    Serial.printf("Turning HEAT OFF\n");
-                    currentState.setVal(0);
-                }
-
-                if (currentTemp.getVal<float>() > coolingThreshold.getVal<float>() && currentState.getVal() != 2) {
-                    Serial.printf("Turning COOL ON\n");
-                    currentState.setVal(2);
-                } else if (currentTemp.getVal<float>() <= coolingThreshold.getVal<float>() && currentState.getVal() == 2) {
-                    Serial.printf("Turning COOL OFF\n");
-                    currentState.setVal(0);
-                }
-                break;
-        }
     }
 };
 

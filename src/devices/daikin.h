@@ -26,13 +26,23 @@
 /** @brief Maximum number of retries until timeout */
 #define DAIKIN_RETRY_MAX            (10U)
 
+#define M_SET_FAN_SPEED(speed)      (                   \
+    (speed == 0) ? E_AUTO :                             \
+    (speed > 0  && speed <= 10)  ? E_SILENCE :          \
+    (speed > 10 && speed <= 40)  ? E_LVL_1 :            \
+    (speed > 40 && speed <= 60)  ? E_LVL_2 :            \
+    (speed > 60 && speed <= 80)  ? E_LVL_3 :            \
+    (speed > 80 && speed <= 100) ? E_LVL_4 : E_LVL_5    \
+)
+
 /************************************************
  *  Typedef definition
  ***********************************************/
 /** @brief This enum represents the type of a HTTP Request */
 typedef enum {
     E_GET_CONTROL_INFO = 0U,        /**< Request to read AC active parameters */
-    E_SET_CONTROL_INFO = 1U         /**< Request to modify AC active parameters */
+    E_SET_CONTROL_INFO = 1U,        /**< Request to modify AC active parameters */
+    E_GET_SENSOR_INFO  = 2U
 } t_requestType;
 
 /** @brief This enum represents the Daikin states */
@@ -74,6 +84,15 @@ typedef struct {
     t_fanDirection fanDirection;    /**< Device Fan Swing Direction */
 } t_deviceInfo;
 
+typedef struct {
+    bool retSts;
+    float htemp;
+    float hhum;
+    float otemp;
+    bool err;
+    int cmpfreq;
+} t_sensorInfo;
+
 /************************************************
  *  Class definition
  ***********************************************/
@@ -87,6 +106,8 @@ private:
     HTTPClient http;
     String urlStart;
     t_deviceInfo currentDeviceSts;
+    t_sensorInfo currentSensorInfo;
+    bool acPowerState;  // true = on
 
     /**
      * @brief Daikin Get Device Status private method
@@ -99,6 +120,7 @@ private:
     t_httpErrorCodes getDeviceStatus(void);
 
 public:
+
     /**
      * @brief Constructor of the Daikin class
      *
@@ -107,6 +129,7 @@ public:
      */
     daikin(char * ipAddress, const int portId) {
         this->urlStart = "http://" + String(ipAddress) + ":" + String(portId) + "/aircon/";
+        acPowerState = false;
     }
 
     /**
@@ -139,7 +162,7 @@ public:
      * @param speed     New speed
      * @return t_httpErrorCodes
      */
-    t_httpErrorCodes setFanSpeed(t_fanMode * speed);
+    t_httpErrorCodes setFanSpeed(t_fanMode speed);
 
     /**
      * @brief Daikin Set Fan Swing Mode public method
@@ -150,6 +173,12 @@ public:
      * @return t_httpErrorCodes
      */
     t_httpErrorCodes setFanSwingMode(t_fanDirection swing);
+
+    /* https://github.com/ael-code/daikin-control */
+    t_httpErrorCodes getCurrentTemperature(float * const sensorTemperature);
+
+    bool getPowerState(void);
+
 };
 
 #endif /* DAIKIN_H */

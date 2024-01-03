@@ -51,7 +51,7 @@ static std::tuple<t_httpErrorCodes, String> createUrlRequest(HTTPClient * http, 
 
     if (requestType == E_GET_CONTROL_INFO) {
         url = urlStart + "get_control_info?";
-    } else {
+    } else if (requestType == E_SET_CONTROL_INFO) {
         url = urlStart + "set_control_info?" + "pow=" + String(int(controlParams->power))
                                              + "&mode=" + String(controlParams->mode)
                                              + "&stemp=" + String(controlParams->setPointTemperature)
@@ -60,6 +60,8 @@ static std::tuple<t_httpErrorCodes, String> createUrlRequest(HTTPClient * http, 
                                              + "&f_dir=" + String(controlParams->fanDirection);
 
         Serial.println(url);
+    } else if (requestType == E_GET_SENSOR_INFO) {
+        url = urlStart + "get_sensor_info";
     }
 
     status = getHttpResponse(http, url);
@@ -107,6 +109,43 @@ static void unwrapDeviceStatus(String status, t_deviceInfo * const deviceInfo) {
     free(mutableInputString);
 }
 
+static void unwrapSensorStatus(String status, t_sensorInfo * const sensorInfo) {
+
+    char * token;
+    char * savePtr;
+    char * mutableInputString = strdup(status.c_str());
+    token = strtok_r(mutableInputString, ",", &savePtr);
+
+    while (token != NULL) {
+        // Split each token into a key and value pair
+        char* key = strtok(token, "=");
+        char* value = strtok(NULL, "=");
+
+        if (key != NULL && value != NULL) {
+            // Determine which element of the struct to update based on the key
+            if (strcmp(key, "ret") == 0) {
+                sensorInfo->retSts = (strcmp(value, "OK") == 0);
+            } else if (strcmp(key, "htemp") == 0) {
+                sensorInfo->htemp = std::atof(value);
+            } else if (strcmp(key, "hhum") == 0) {
+                sensorInfo->hhum = std::atof(value);
+            } else if (strcmp(key, "otemp") == 0) {
+                sensorInfo->otemp = std::atof(value);
+            } else if (strcmp(key, "err") == 0) {
+                sensorInfo->err = bool(std::stoi(value));
+            } else if (strcmp(key, "cmpfreq") == 0) {
+                sensorInfo->cmpfreq = std::stoi(value);
+            } else {
+                /* The rest of the response is not needed */
+            }
+        }
+        /* Get the next token */
+        token = strtok_r(NULL, ",", &savePtr);
+    }
+
+    free(mutableInputString);
+}
+
 /************************************************
  *  Public Method Implementation
  ***********************************************/
@@ -115,13 +154,14 @@ t_httpErrorCodes daikin::powerOnOff(bool power) {
     t_httpErrorCodes getStsErr;
 
     /* Get the current status */
-    getStsErr = this->getDeviceStatus();
+    getStsErr = getDeviceStatus();
     if ((E_REQUEST_SUCCESS == getStsErr) &&
-        (this->currentDeviceSts.retSts == true)) {
+        (currentDeviceSts.retSts == true)) {
 
         /* Set the new power mode */
-        this->currentDeviceSts.power = power;
-        status = createUrlRequest(&this->http, this->urlStart, E_SET_CONTROL_INFO, &this->currentDeviceSts);
+        currentDeviceSts.power = power;
+        acPowerState = power;
+        status = createUrlRequest(&http, urlStart, E_SET_CONTROL_INFO, &currentDeviceSts);
     } else {
         /* Communication error */
         Serial.println("Device not responsive");
@@ -136,22 +176,22 @@ t_httpErrorCodes daikin::setTemperature(t_mode mode, const float newTemperature)
     t_httpErrorCodes getStsErr;
 
     /* Get the current status */
-    getStsErr = this->getDeviceStatus();
+    getStsErr = getDeviceStatus();
 
     if ((E_REQUEST_SUCCESS == getStsErr) &&
-        (this->currentDeviceSts.retSts == true)) {
+        (currentDeviceSts.retSts == true)) {
 
         /* Set the new target temperature */
-        this->currentDeviceSts.setPointTemperature = newTemperature;
-        this->currentDeviceSts.mode = mode;
+        currentDeviceSts.setPointTemperature = newTemperature;
+        currentDeviceSts.mode = mode;
 
         /* Check if device is ON */
-        if (this->currentDeviceSts.power == true) {
-            status = createUrlRequest(&this->http, this->urlStart, E_SET_CONTROL_INFO, &this->currentDeviceSts);
+        if (currentDeviceSts.power == true) {
+            status = createUrlRequest(&http, urlStart, E_SET_CONTROL_INFO, &currentDeviceSts);
         }
 
         /** @todo Remove */
-        (void)this->getDeviceStatus();
+        (void)getDeviceStatus();
     } else {
         /* Communication error */
         Serial.println("Device not responsive");
@@ -160,22 +200,22 @@ t_httpErrorCodes daikin::setTemperature(t_mode mode, const float newTemperature)
     return (std::get<0>(status));
 }
 
-t_httpErrorCodes daikin::setFanSpeed(t_fanMode * speed) {
+t_httpErrorCodes daikin::setFanSpeed(t_fanMode speed) {
 
     std::tuple<t_httpErrorCodes, String> status(E_REQUEST_FAILURE, "");
     t_httpErrorCodes getStsErr;
 
     /* Get the current status */
-    getStsErr = this->getDeviceStatus();
+    getStsErr = getDeviceStatus();
     if ((getStsErr == E_REQUEST_SUCCESS)  &&
-        (this->currentDeviceSts.retSts == true)) {
+        (currentDeviceSts.retSts == true)) {
 
         /* Set the new Fan Speed */
-        (void)memcpy(&this->currentDeviceSts.fanControl, speed, sizeof(char));
+        (void)memset(&currentDeviceSts.fanControl, speed, sizeof(char));
 
         /* Check if device is ON */
-        if (this->currentDeviceSts.power == true) {
-            status = createUrlRequest(&this->http, this->urlStart, E_SET_CONTROL_INFO, &this->currentDeviceSts);
+        if (currentDeviceSts.power == true) {
+            status = createUrlRequest(&http, urlStart, E_SET_CONTROL_INFO, &currentDeviceSts);
         }
     } else {
         /* Communication error */
@@ -191,16 +231,16 @@ t_httpErrorCodes daikin::setFanSwingMode(t_fanDirection swing) {
     t_httpErrorCodes getStsErr;
 
     /* Get the current status */
-    getStsErr = this->getDeviceStatus();
+    getStsErr = getDeviceStatus();
     if ((getStsErr == E_REQUEST_SUCCESS)  &&
-        (this->currentDeviceSts.retSts == true)) {
+        (currentDeviceSts.retSts == true)) {
 
         /* Set the new Fan Swing Mode */
-        this->currentDeviceSts.fanDirection = swing;
+        currentDeviceSts.fanDirection = swing;
 
         /* Check if device is ON */
-        if (this->currentDeviceSts.power == true) {
-            status = createUrlRequest(&this->http, this->urlStart, E_SET_CONTROL_INFO, &this->currentDeviceSts);
+        if (currentDeviceSts.power == true) {
+            status = createUrlRequest(&http, urlStart, E_SET_CONTROL_INFO, &currentDeviceSts);
         }
     } else {
         /* Communication error */
@@ -210,6 +250,28 @@ t_httpErrorCodes daikin::setFanSwingMode(t_fanDirection swing) {
     return (std::get<0>(status));
 }
 
+t_httpErrorCodes daikin::getCurrentTemperature(float * const sensorTemperature) {
+
+    std::tuple<t_httpErrorCodes, String> status(E_REQUEST_FAILURE, "");
+    *sensorTemperature = 0;
+
+    status = createUrlRequest(&http, urlStart, E_GET_SENSOR_INFO);
+    if (std::get<0>(status) == E_REQUEST_SUCCESS) {
+        unwrapSensorStatus(std::get<1>(status), &currentSensorInfo);
+
+        if (currentSensorInfo.retSts == true) {
+            *sensorTemperature = currentSensorInfo.htemp;
+        }
+    }
+
+    return (std::get<0>(status));
+}
+
+bool daikin::getPowerState(void) {
+
+    return (acPowerState);
+}
+
 /************************************************
  *  Private Method implementation
  ***********************************************/
@@ -217,23 +279,23 @@ t_httpErrorCodes daikin::getDeviceStatus(void) {
 
     std::tuple<t_httpErrorCodes, String> status(E_REQUEST_FAILURE, "");
 
-    status = createUrlRequest(&this->http, this->urlStart, E_GET_CONTROL_INFO);
-    unwrapDeviceStatus(std::get<1>(status), &this->currentDeviceSts);
+    status = createUrlRequest(&http, urlStart, E_GET_CONTROL_INFO);
+    unwrapDeviceStatus(std::get<1>(status), &currentDeviceSts);
 
     Serial.print("Return status: ");
-    Serial.println(this->currentDeviceSts.retSts);
+    Serial.println(currentDeviceSts.retSts);
     Serial.print("Device status: ");
-    Serial.println(this->currentDeviceSts.power);
+    Serial.println(currentDeviceSts.power);
     Serial.print("Device mode: ");
-    Serial.println(this->currentDeviceSts.mode);
+    Serial.println(currentDeviceSts.mode);
     Serial.print("Device target temperature: ");
-    Serial.println(this->currentDeviceSts.setPointTemperature);
+    Serial.println(currentDeviceSts.setPointTemperature);
     Serial.print("Device target humidity: ");
-    Serial.println(this->currentDeviceSts.setPointHumidity);
+    Serial.println(currentDeviceSts.setPointHumidity);
     Serial.print("Device fan mode: ");
-    Serial.println(this->currentDeviceSts.fanControl);
+    Serial.println(currentDeviceSts.fanControl);
     Serial.print("Device fan direction: ");
-    Serial.println(this->currentDeviceSts.fanDirection);
+    Serial.println(currentDeviceSts.fanDirection);
     Serial.println("===========");
 
     return (std::get<0>(status));

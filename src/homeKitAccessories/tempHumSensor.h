@@ -8,15 +8,11 @@
 #include "DHT.h"
 
 /* Local files */
+#include "devices/deviceInfo.h"
 
 /************************************************
  *  Defines / Macros
  ***********************************************/
-#define DHT_TEMPERATURE_DEFAULT_MIN_VAL         (15U)
-#define DHT_TEMPERATURE_DEFAULT_MAX_VAL         (30U)
-
-#define DHT_HUMIDITY_DEFAULT_MIN_RANGE          (0U)
-#define DHT_HUMIDITY_DEFAULT_MAX_RANGE          (100U)
 
 /************************************************
  *  Typedef definition
@@ -25,20 +21,24 @@
 /************************************************
  *  Class definition
  ***********************************************/
-struct HS_TempHumSensor : Service::TemperatureSensor, Service::HumiditySensor, DHT {
+struct HS_TempSensor : Service::TemperatureSensor {
+  private:
+    SpanCharacteristic *temp;
+    DHT tempSensor{DHT_PIN, DHT_TYPE};
+    uint32_t pollingTime;
+
   public:
-    HS_TempHumSensor(const int dhtPin, const int dhtType, const int pollingTime) : Service::TemperatureSensor(), Service::HumiditySensor(), DHT(dhtPin, dhtType) {
-      /* Initialize the DHT Sensor */
-      begin();
-      this->pollingTime = pollingTime;
+    HS_TempSensor() : Service::TemperatureSensor() {
+        /* Initialize the DHT Sensor */
+        tempSensor.begin();
 
-      /* Get the initial temperature */
-      temp = new Characteristic::CurrentTemperature(getTemperature());
-      humidity = new Characteristic::CurrentRelativeHumidity(getHumidity());
+        pollingTime = DHT_POLLING_TIME;
 
-      /* Set default values for temperature and humidity ranges */
-      setTempRange(DHT_TEMPERATURE_DEFAULT_MIN_VAL, DHT_TEMPERATURE_DEFAULT_MAX_VAL);
-      setHumidityRange(DHT_HUMIDITY_DEFAULT_MIN_RANGE, DHT_HUMIDITY_DEFAULT_MAX_RANGE);
+        /* Get the initial temperature */
+        temp = new Characteristic::CurrentTemperature(tempSensor.readTemperature());
+
+        /* Set default values for temperature and humidity ranges */
+        setTempRange(DHT_TEMPERATURE_DEFAULT_MIN_VAL, DHT_TEMPERATURE_DEFAULT_MAX_VAL);
     } /* end constructor */
 
     void loop() override {
@@ -47,24 +47,29 @@ struct HS_TempHumSensor : Service::TemperatureSensor, Service::HumiditySensor, D
         if (temp->timeVal() > pollingTime) {
 
             /* Set the temperature & humidity */
-            temp->setVal(getTemperature());
-            humidity->setVal(getHumidity());
-
-            /* Debug */
-            Serial.printf("New readout temperature = %.2f \n", temp->getNewVal());
-            Serial.printf("New readout humidity = %.2f \n", humidity->getNewVal());
+            temp->setVal(tempSensor.readTemperature());
         }
     }
 
-    void setTempRange(float min, float max);
-    void setHumidityRange(uint8_t min, uint8_t max);
-    float getTemperature(void);
-    float getHumidity(void);
+    void setTempRange(float min, float max) {
+        float minTempVal = 0;
+        float maxTempVal = 0;
 
-  private:
-    SpanCharacteristic *temp;
-    SpanCharacteristic *humidity;
-    uint32_t pollingTime;
+        /* Check for min and max range */
+        if (min < DHT_TEMPERATURE_DEFAULT_MIN_VAL) {
+            minTempVal = DHT_TEMPERATURE_DEFAULT_MIN_VAL;
+        } else {
+            minTempVal = min;
+        }
+
+        if (max > DHT_TEMPERATURE_DEFAULT_MAX_VAL) {
+            maxTempVal = DHT_TEMPERATURE_DEFAULT_MAX_VAL;
+        } else {
+            maxTempVal = max;
+        }
+
+        temp->setRange(minTempVal, maxTempVal);
+    }
 };
 
 #endif /* TEMPERATURE_HUMIDITY_SENSOR_H */

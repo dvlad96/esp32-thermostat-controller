@@ -10,6 +10,7 @@
 #include "homeKitAccessories/tempHumSensor.h"
 #include "devices/daikin.h"
 #include "devices/heatingRelay.h"
+#include "devices/deviceInfo.h"
 
 /* Private files */
 #include "private/wifiCredentials.h"
@@ -17,16 +18,6 @@
 /************************************************
  *  Defines / Macros
  ***********************************************/
-
-/** @brief Daikin AC IP Address */
-#define DAIKIN_IP_ADDRESS               ("192.168.1.132")
-
-/** @brief Daikin AC Port ID */
-#define DAIKIN_PORT_ID                  (DEFAULT_DAIKIN_PORT)
-
-#define LIVING_ROOM_DHT_PIN             (5U)
-#define LIVING_ROOM_DHT_TYPE            (22U)
-#define LIVING_ROOM_DHT_POLLING_TIME    (5000U)
 
 /************************************************
  *  Typedef definition
@@ -40,6 +31,9 @@ void setup() {
     /* Used for debug */
     Serial.begin(115200);
 
+    /* Setup the relay */
+    relayCommunicationSetup();
+
 #if defined(WIFI_SSID) && defined(WIFI_PASSWORD)
     /* Connect to the Internet */
     homeSpan.setWifiCredentials(WIFI_SSID, WIFI_PASSWORD);
@@ -49,7 +43,7 @@ void setup() {
     homeSpan.setPairingCode("00011000");
 
     /* Create a Bridge to account for multiple devices (accessories) */
-    homeSpan.begin(Category::Bridges,"ESP32 - Bridge");
+    homeSpan.begin(Category::Bridges, "ESP32 - Bridge");
 
     /* 1. Bridge */
     new SpanAccessory();
@@ -59,26 +53,35 @@ void setup() {
     /* 2. Living Room Thermostat */
     new SpanAccessory();
         new Service::AccessoryInformation();
+            new Characteristic::Name(THERMOSTAT_NAME);
+            new Characteristic::Manufacturer(THERMOSTAT_MANUFACTURER);
+            new Characteristic::Model(THERMOSTAT_MODEL);
+            new Characteristic::SerialNumber(THERMOSTAT_SERIAL_NUM);
+            new Characteristic::FirmwareRevision(THERMOSTAT_FIRMWARE);
             new Characteristic::Identify();
-            new Characteristic::Name("Living Room Thermostat");
-        new HS_Thermostat((char *)DAIKIN_IP_ADDRESS, DAIKIN_PORT_ID,
-                          LIVING_ROOM_DHT_PIN, LIVING_ROOM_DHT_TYPE, LIVING_ROOM_DHT_POLLING_TIME);
+        new HS_Thermostat();
 
     /* 3. Living Room AC */
     new SpanAccessory();
         new Service::AccessoryInformation();
+            new Characteristic::Name(DAIKIN_AC_NAME);
+            new Characteristic::Manufacturer(DAIKIN_AC_MANUFACTURER);
+            new Characteristic::Model(DAIKIN_AC_MODEL);
+            new Characteristic::SerialNumber(DAIKIN_AC_SERIAL_NUM);
+            new Characteristic::FirmwareRevision(DAIKIN_AC_FIRMWARE);
             new Characteristic::Identify();
-            new Characteristic::Name("Living Room AC");
-        new HS_AirConditioner((char *)DAIKIN_IP_ADDRESS, DAIKIN_PORT_ID);
+        new HS_AirConditioner();
 
     /* 4. Living Room Temperature & Humidity Sensor */
     new SpanAccessory();
         new Service::AccessoryInformation();
+            new Characteristic::Name(DHT_SENSOR_NAME);
+            new Characteristic::Manufacturer(DHT_SENSOR_MANUFACTURER);
+            new Characteristic::Model(DHT_SENSOR_MODEL);
+            new Characteristic::SerialNumber(DHT_SENSOR_SERIAL_NUM);
+            new Characteristic::FirmwareRevision(DHT_SENSOR_FIRMWARE);
             new Characteristic::Identify();
-            new Characteristic::Name("Living Room Temperature");
-        new HS_TempHumSensor(LIVING_ROOM_DHT_PIN, LIVING_ROOM_DHT_TYPE, LIVING_ROOM_DHT_POLLING_TIME);
-
-    relayCommunicationSetup();
+        new HS_TempSensor();
 }
 
 void loop() {
