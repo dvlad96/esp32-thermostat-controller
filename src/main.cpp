@@ -31,9 +31,6 @@ void setup() {
     /* Used for debug */
     Serial.begin(115200);
 
-    /* Setup the relay */
-    relayCommunicationSetup();
-
 #if defined(WIFI_SSID) && defined(WIFI_PASSWORD)
     /* Connect to the Internet */
     homeSpan.setWifiCredentials(WIFI_SSID, WIFI_PASSWORD);

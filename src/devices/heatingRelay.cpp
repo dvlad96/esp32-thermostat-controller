@@ -2,6 +2,7 @@
  *  Includes
  ***********************************************/
 #include <Arduino.h>
+#include <esp_now.h>
 
 /* Local files */
 #include "heatingRelay.h"
@@ -9,10 +10,8 @@
 /************************************************
  *  Defines / Macros
  ***********************************************/
-#define RELAY_COMMAND_SUCCESS       (true)
-#define RELAY_COMMAND_FAILURE       (false)
-
-#define TEST_LED                    (18U)
+/** @brief ESP-Now command size in bytes */
+#define HEATING_RELAY_COMMAND_SIZE          (1U)
 
 /************************************************
  *  Typedef definition
@@ -25,27 +24,21 @@
 /************************************************
  *  Public Method Implementation
  ***********************************************/
-void relayCommunicationSetup() {
+t_espNowErrorCodes heatingRelay::sendRelayCommand(const uint8_t command) {
 
-    /* For the moment test with a LED */
-    pinMode(TEST_LED, OUTPUT);
-    digitalWrite(TEST_LED, LOW);
-}
+    t_espNowErrorCodes commandError = E_COMMAND_FAILURE;
+    uint8_t espCommand[HEATING_RELAY_COMMAND_SIZE] = {
+        command
+    };
 
-bool relayOnOff(bool on) {
-
-    if (on == HEATING_ON) {
-        /* Send ON to the Heating Plant */
-        digitalWrite(TEST_LED, HIGH);
-    } else {
-        /* Send OFF to the Heating Plant */
-        digitalWrite(TEST_LED, LOW);
+    /* Check if the ESP-Now Communication protocol is up */
+    if (E_ESP_NOW_COMMUNICATION_UP == getEspNowRelayStatus()) {
+        commandError = sendEspNowRelayCommand(espCommand, HEATING_RELAY_COMMAND_SIZE);
     }
 
-    return (RELAY_COMMAND_SUCCESS);
+    return (commandError);
 }
 
 /************************************************
  *  Private Method implementation
  ***********************************************/
-

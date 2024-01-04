@@ -26,6 +26,7 @@
 /** @brief Maximum number of retries until timeout */
 #define DAIKIN_RETRY_MAX            (10U)
 
+/** @brief Macro for setting the AC Fan Speed */
 #define M_SET_FAN_SPEED(speed)      (                   \
     (speed == 0) ? E_AUTO :                             \
     (speed > 0  && speed <= 10)  ? E_SILENCE :          \
@@ -84,13 +85,15 @@ typedef struct {
     t_fanDirection fanDirection;    /**< Device Fan Swing Direction */
 } t_deviceInfo;
 
+/** @brief This structure is used for sensor status informations
+ *  @note More details: https://github.com/ael-code/daikin-control */
 typedef struct {
-    bool retSts;
-    float htemp;
-    float hhum;
+    bool retSts;                    /**< Request status */
+    float htemp;                    /**< Current temperature */
+    float hhum;                     /**< Current humidity */
     float otemp;
-    bool err;
-    int cmpfreq;
+    bool err;                       /**< Error */
+    int cmpfreq;                    /**< Frequency */
 } t_sensorInfo;
 
 /************************************************
@@ -103,11 +106,20 @@ typedef struct {
  */
 class daikin {
 private:
+    /** @brief HTTP Client Object */
     HTTPClient http;
+
+    /** @brief URL Start */
     String urlStart;
+
+    /** @brief Current Device Status */
     t_deviceInfo currentDeviceSts;
+
+    /** @brief Current Sensor Info */
     t_sensorInfo currentSensorInfo;
-    bool acPowerState;  // true = on
+
+    /** @brief AC Power state */
+    bool acPowerState;
 
     /**
      * @brief Daikin Get Device Status private method
@@ -174,11 +186,26 @@ public:
      */
     t_httpErrorCodes setFanSwingMode(t_fanDirection swing);
 
-    /* https://github.com/ael-code/daikin-control */
+    /**
+     * @brief Get the Current Temperature
+     * @details
+     *  This method is responsible for getting the AC temperature from it's internal
+     * sensor
+     *
+     * @param sensorTemperature     Returned temperature
+     * @return t_httpErrorCodes
+     */
     t_httpErrorCodes getCurrentTemperature(float * const sensorTemperature);
 
+    /**
+     * @brief Get the Power State
+     * @details
+     *  This method is responsible for getting the current AC Power state
+     *
+     * @return true if the AC is on
+     * @return false if the AC is off
+     */
     bool getPowerState(void);
-
 };
 
 #endif /* DAIKIN_H */

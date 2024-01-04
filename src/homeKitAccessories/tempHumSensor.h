@@ -22,12 +22,18 @@
  *  Class definition
  ***********************************************/
 struct HS_TempSensor : Service::TemperatureSensor {
-  private:
-    SpanCharacteristic *temp;
-    DHT tempSensor{DHT_PIN, DHT_TYPE};
+private:
+    /** @brief Temperature Characteristic */
+    SpanCharacteristic * temp;
+
+    /** @brief Sensor Polling Time */
     uint32_t pollingTime;
 
-  public:
+    /** @brief DHT Temperature Object */
+    DHT tempSensor{DHT_PIN, DHT_TYPE};
+
+public:
+    /** @brief Constructor */
     HS_TempSensor() : Service::TemperatureSensor() {
         /* Initialize the DHT Sensor */
         tempSensor.begin();
@@ -39,8 +45,9 @@ struct HS_TempSensor : Service::TemperatureSensor {
 
         /* Set default values for temperature and humidity ranges */
         setTempRange(DHT_TEMPERATURE_DEFAULT_MIN_VAL, DHT_TEMPERATURE_DEFAULT_MAX_VAL);
-    } /* end constructor */
+    }
 
+    /** @brief Loop function override */
     void loop() override {
 
         /* if it has been a while since last update */
@@ -51,6 +58,14 @@ struct HS_TempSensor : Service::TemperatureSensor {
         }
     }
 
+    /**
+     * @brief Set Temp Range method
+     * @details
+     *  Set the temperature range
+     *
+     * @param min   min temperature threshold
+     * @param max   max temperature threshold
+     */
     void setTempRange(float min, float max) {
         float minTempVal = 0;
         float maxTempVal = 0;
