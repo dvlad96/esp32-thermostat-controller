@@ -26,9 +26,6 @@ private:
     /** @brief Temperature Characteristic */
     SpanCharacteristic * temp;
 
-    /** @brief Sensor Polling Time */
-    uint32_t pollingTime;
-
     /** @brief DHT Temperature Object */
     DHT tempSensor{DHT_PIN, DHT_TYPE};
 
@@ -37,8 +34,6 @@ public:
     HS_TempSensor() : Service::TemperatureSensor() {
         /* Initialize the DHT Sensor */
         tempSensor.begin();
-
-        pollingTime = DHT_POLLING_TIME;
 
         /* Get the initial temperature */
         temp = new Characteristic::CurrentTemperature(tempSensor.readTemperature());
@@ -51,7 +46,7 @@ public:
     void loop() override {
 
         /* if it has been a while since last update */
-        if (temp->timeVal() > pollingTime) {
+        if (temp->timeVal() > TEMPERATURE_SENSOR_POLLING_TIME) {
 
             /* Set the temperature & humidity */
             temp->setVal(tempSensor.readTemperature());

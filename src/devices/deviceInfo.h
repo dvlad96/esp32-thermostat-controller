@@ -12,7 +12,7 @@
 #define DHT_PIN                                 (5U)
 #define DHT_TYPE                                (22U)
 
-#define DHT_POLLING_TIME                        (5000U)
+#define TEMPERATURE_SENSOR_POLLING_TIME         (5000U)
 
 #define DHT_TEMPERATURE_DEFAULT_MIN_VAL         (15U)
 #define DHT_TEMPERATURE_DEFAULT_MAX_VAL         (30U)

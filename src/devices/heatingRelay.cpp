@@ -32,8 +32,15 @@ t_espNowErrorCodes heatingRelay::sendRelayCommand(const uint8_t command) {
     };
 
     /* Check if the ESP-Now Communication protocol is up */
-    if (E_ESP_NOW_COMMUNICATION_UP == getEspNowRelayStatus()) {
+    if (E_ESP_NOW_COMMUNICATION_UP == getEspNowStatus()) {
         commandError = sendEspNowRelayCommand(espCommand, HEATING_RELAY_COMMAND_SIZE);
+
+        /* Set the relay state */
+        if (command == RELAY_COMMAND_OFF) {
+            setEsp01sRelayState(E_ESP01S_RELAY_OFF);
+        } else {
+            setEsp01sRelayState(E_ESP01S_RELAY_ON);
+        }
     }
 
     return (commandError);

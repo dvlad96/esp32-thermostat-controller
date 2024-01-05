@@ -191,7 +191,7 @@ public:
             (void)ac.getCurrentTemperature(&readoutTemperature);
 
             currentTemperature->setVal(readoutTemperature);
-            Serial.printf("AC: New readout temperature = %.2f \n", readoutTemperature);
+            //Serial.printf("AC: New readout temperature = %.2f \n", readoutTemperature);
         }
     }
 };

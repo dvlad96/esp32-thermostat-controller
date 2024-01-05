@@ -26,6 +26,12 @@ typedef enum {
     E_ESP_NOW_COMMUNICATION_DOWN = 1U           /**< ESP-Now Communication Protocol Down */
 } t_espNowState;
 
+/** @brief ESP-01S Relay State */
+typedef enum {
+    E_ESP01S_RELAY_OFF = 0U,                    /**< ESP-01S Relay OFF */
+    E_ESP01S_RELAY_ON  = 1U                     /**< ESP-01S Relay ON */
+} t_esp01sRelayState;
+
 /************************************************
  *  Class definition
  ***********************************************/
@@ -38,9 +44,13 @@ private:
     /** @brief ESP-Now Communication Protocol State */
     t_espNowState state;
 
+    /** @brief ESP-01S relay state */
+    t_esp01sRelayState relayState;
+
     /** @brief ESP-01S MAC Address */
     uint8_t macAddr[ESP_NOW_MAC_ADDRESS_SIZE];
 
+    /** @brief ESP-Now Channel */
     uint8_t channel;
 
 public:
@@ -48,6 +58,7 @@ public:
     esp01sRelay(const uint8_t macAddress[ESP_NOW_MAC_ADDRESS_SIZE], const uint8_t espNowChannel) {
         (void)memcpy(macAddr, macAddress, ESP_NOW_MAC_ADDRESS_SIZE);
         state = E_ESP_NOW_COMMUNICATION_DOWN;
+        relayState = E_ESP01S_RELAY_OFF;
         channel = espNowChannel;
     }
 
@@ -80,7 +91,11 @@ public:
      *
      * @return t_espNowState
      */
-    t_espNowState getEspNowRelayStatus(void);
+    t_espNowState getEspNowStatus(void);
+
+    void setEsp01sRelayState(const t_esp01sRelayState newState);
+
+    t_esp01sRelayState getEsp01sRelayState(void);
 };
 
 #endif /* ESP_01_S_RELAY_H */

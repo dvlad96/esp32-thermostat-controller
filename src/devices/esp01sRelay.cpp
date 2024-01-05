@@ -28,8 +28,11 @@ void esp01sRelay::espNowCommunicationSetup(void) {
     uint8_t retry = 0U;
     esp_now_peer_info_t peerInfo;
 
+    Serial.println("Initializing ESP-NOW");
+
     /* Initialize the ESP-Now state */
     state = E_ESP_NOW_COMMUNICATION_UP;
+    setEsp01sRelayState(E_ESP01S_RELAY_OFF);
 
     /* Try to perform the setup for a max of RELAY_NB_RETRIES */
     do {
@@ -57,7 +60,14 @@ void esp01sRelay::espNowCommunicationSetup(void) {
         }
 
         retry++;
-    } while ((state != E_ESP_NOW_COMMUNICATION_UP) || (retry < ESP_NOW_NB_RETRIES));
+    } while ((state != E_ESP_NOW_COMMUNICATION_UP) && (retry < ESP_NOW_NB_RETRIES));
+
+    if (state == E_ESP_NOW_COMMUNICATION_UP) {
+        Serial.println("ESP-Now initialized correctly");
+    } else {
+        Serial.println("Failed ESP-Now initialization");
+
+    }
 }
 
 t_espNowErrorCodes esp01sRelay::sendEspNowRelayCommand(const uint8_t * const command, const uint8_t commandSize) {
@@ -71,11 +81,20 @@ t_espNowErrorCodes esp01sRelay::sendEspNowRelayCommand(const uint8_t * const com
     return (commandError);
 }
 
-t_espNowState esp01sRelay::getEspNowRelayStatus(void) {
+t_espNowState esp01sRelay::getEspNowStatus(void) {
 
     return (state);
 }
 
+void esp01sRelay::setEsp01sRelayState(const t_esp01sRelayState newState) {
+
+    relayState = newState;
+}
+
+t_esp01sRelayState esp01sRelay::getEsp01sRelayState(void) {
+
+    return (relayState);
+}
 /************************************************
  *  Private Method implementation
  ***********************************************/

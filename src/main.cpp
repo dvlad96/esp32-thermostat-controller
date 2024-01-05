@@ -34,6 +34,9 @@ void setup() {
 #if defined(WIFI_SSID) && defined(WIFI_PASSWORD)
     /* Connect to the Internet */
     homeSpan.setWifiCredentials(WIFI_SSID, WIFI_PASSWORD);
+
+    WiFi.mode(WIFI_AP_STA);
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 #endif
 
     /* Create the pairing code */
