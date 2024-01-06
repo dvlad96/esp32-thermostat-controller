@@ -9,7 +9,6 @@
 #include <HTTPClient.h>
 
 /* Local files */
-#include "private/espNowInfo.h"
 #include "errorCodes.h"
 
 /************************************************
