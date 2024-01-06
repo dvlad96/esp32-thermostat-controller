@@ -38,6 +38,8 @@ static std::tuple<t_httpErrorCodes, String> getHttpResponse(HTTPClient * http, S
         error = E_REQUEST_FAILURE;
     }
 
+    http->end();
+
     return std::make_tuple(error, response);
 }
 

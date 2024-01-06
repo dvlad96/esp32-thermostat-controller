@@ -10,8 +10,6 @@
 /************************************************
  *  Defines / Macros
  ***********************************************/
-/** @brief ESP-Now command size in bytes */
-#define HEATING_RELAY_COMMAND_SIZE          (1U)
 
 /************************************************
  *  Typedef definition
@@ -24,23 +22,17 @@
 /************************************************
  *  Public Method Implementation
  ***********************************************/
-t_espNowErrorCodes heatingRelay::sendRelayCommand(const uint8_t command) {
+t_httpErrorCodes heatingRelay::sendRelayCommand(const t_esp01sRelayState command) {
 
-    t_espNowErrorCodes commandError = E_COMMAND_FAILURE;
-    uint8_t espCommand[HEATING_RELAY_COMMAND_SIZE] = {
-        command
-    };
+    t_httpErrorCodes commandError;
 
-    /* Check if the ESP-Now Communication protocol is up */
-    if (E_ESP_NOW_COMMUNICATION_UP == getEspNowStatus()) {
-        commandError = sendEspNowRelayCommand(espCommand, HEATING_RELAY_COMMAND_SIZE);
-
-        /* Set the relay state */
-        if (command == RELAY_COMMAND_OFF) {
-            setEsp01sRelayState(E_ESP01S_RELAY_OFF);
-        } else {
-            setEsp01sRelayState(E_ESP01S_RELAY_ON);
-        }
+    /* Set the relay state */
+    if (command == E_ESP01S_RELAY_OPEN) {
+        commandError = sendEsp01sRelayCommand(RELAY_OPEN_COMMAND);
+    } else if (command == E_ESP01S_RELAY_CLOSE) {
+        commandError = sendEsp01sRelayCommand(RELAY_CLOSE_COMMAND);
+    } else {
+        /* Can't reach here */
     }
 
     return (commandError);

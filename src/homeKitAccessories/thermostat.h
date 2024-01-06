@@ -200,7 +200,7 @@ public:
         /* decide whether to changed the state of the heater based on currently set config */
         switch (targetState->getVal()) {
             case E_THERMOSTAT_STATE_OFF:
-                toggle = (bool)RELAY_COMMAND_OFF;
+                toggle = (bool)E_ESP01S_RELAY_OPEN;
                 break;
             case E_THERMOSTAT_STATE_HEAT:
                 toggle = toggleManualHeaterState(averageTemp, targetTemp, heaterState);

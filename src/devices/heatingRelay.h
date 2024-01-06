@@ -10,11 +10,6 @@
 /************************************************
  *  Defines / Macros
  ***********************************************/
-/** @brief Heating ON command */
-#define RELAY_COMMAND_ON            (0x1U)
-
-/** @brief Heating OFF command */
-#define RELAY_COMMAND_OFF           (0x0U)
 
 /************************************************
  *  Typedef definition
@@ -30,7 +25,7 @@
 class heatingRelay : public esp01sRelay {
 private:
 public:
-    heatingRelay(void) : esp01sRelay(espRelayAddress, ESP_NOW_CHANNEL_0) {
+    heatingRelay(void) : esp01sRelay("192.168.1.100", "80") {
         /* Nothing to initialize */
     }
 
@@ -42,7 +37,7 @@ public:
      *
      * @return t_espNowErrorCodes
      */
-    t_espNowErrorCodes sendRelayCommand(const uint8_t command);
+    t_espNowErrorCodes sendRelayCommand(const t_esp01sRelayState command);
 };
 
 #endif /* HEATING_RELAY_H */
