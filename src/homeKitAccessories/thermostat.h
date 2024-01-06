@@ -57,7 +57,7 @@ enum TemperatureDisplayUnits {
 class CurrentHeaterStatus: public Characteristic::CurrentHeatingCoolingState {
 private:
     /** @brief Heating relay Object */
-    heatingRelay heatingDevice;
+    esp01sRelay heatingDevice {"192.168.1.100", 80};
 
 public:
     /** @brief Constructor */
@@ -69,7 +69,7 @@ public:
     template <typename T>
     void setVal(T value, bool notify = true) {
         Serial.printf("Sending %d value to the heater\n", value);
-        heatingDevice.sendRelayCommand(value);
+        (void)heatingDevice.sendRelayCommand(value);
         Characteristic::CurrentHeatingCoolingState::setVal(value, notify);
     }
 };

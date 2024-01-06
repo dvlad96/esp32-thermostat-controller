@@ -27,11 +27,17 @@
  *  Public Method Implementation
  ***********************************************/
 
-t_httpErrorCodes esp01sRelay::sendEsp01sRelayCommand(const String command) {
+t_httpErrorCodes esp01sRelay::sendEsp01sRelayCommand(const t_esp01sRelayState command) {
 
-    String url = httpCommand + command;
+    String url = httpCommand;
     int httpCode;
     t_httpErrorCodes error = E_REQUEST_FAILURE;
+
+    if (command == E_ESP01S_RELAY_OPEN) {
+        url += String(RELAY_OPEN_COMMAND);
+    } else {
+        url += String(RELAY_CLOSE_COMMAND)
+    }
 
     http->begin(url);
     httpCode = http->GET();

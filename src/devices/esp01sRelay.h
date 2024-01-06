@@ -58,11 +58,11 @@ public:
      * @details
      *  This function is used to send commands to the ESP-01S Relay using HTTP GET commands
      *
-     * @param command       HTTP GET command to the relay
+     * @param command       E_ESP01S_RELAY_OPEN or E_ESP01S_RELAY_CLOSE
      *
      * @return t_espNowErrorCodes
      */
-    t_httpErrorCodes sendEsp01sRelayCommand(const String command);
+    t_httpErrorCodes sendEsp01sRelayCommand(const t_esp01sRelayState command);
 
     /**
      * @brief Get the Esp01s Relay State
