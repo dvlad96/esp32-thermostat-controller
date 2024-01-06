@@ -185,7 +185,7 @@ public:
                 break;
         }
 
-        /* Once every DAIKIN_AC_TEMPERATURE_REFRESH minutes, check the sensor temperature */
+        /* Once every DAIKIN_AC_TEMPERATURE_REFRESH, check the sensor temperature */
         if (currentTemperature->timeVal() > DAIKIN_AC_TEMPERATURE_REFRESH) {
             float readoutTemperature = 0;
             (void)ac.getCurrentTemperature(&readoutTemperature);

@@ -44,6 +44,9 @@
 #define THERMOSTAT_SERIAL_NUM                   ("00000001")
 #define THERMOSTAT_FIRMWARE                     ("v1.0.0")
 
+#define THERMOSTAT_RELAY_IP_ADDRESS             ("192.168.1.100")
+#define THERMOSTAT_RELAY_PORT_ID                (80U)
+
 /************************************************
  *  Typedef definition
  ***********************************************/

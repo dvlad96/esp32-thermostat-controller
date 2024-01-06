@@ -8,7 +8,7 @@
 
 /* Local files */
 #include "devices/daikin.h"
-#include "devices/heatingRelay.h"
+#include "devices/esp01sRelay.h"
 #include "homeKitAccessories/tempHumSensor.h"
 
 /************************************************
@@ -57,20 +57,22 @@ enum TemperatureDisplayUnits {
 class CurrentHeaterStatus: public Characteristic::CurrentHeatingCoolingState {
 private:
     /** @brief Heating relay Object */
-    esp01sRelay heatingDevice {"192.168.1.100", 80};
+    esp01sRelay heatingDevice {THERMOSTAT_RELAY_IP_ADDRESS, THERMOSTAT_RELAY_PORT_ID};
 
 public:
     /** @brief Constructor */
-    CurrentHeaterStatus(): Characteristic::CurrentHeatingCoolingState(E_THERMOSTAT_STATE_OFF) {
-        /* Initialize the Heating Device */
-        heatingDevice.espNowCommunicationSetup();
-    }
+    CurrentHeaterStatus(): Characteristic::CurrentHeatingCoolingState(E_THERMOSTAT_STATE_OFF) {}
 
     template <typename T>
     void setVal(T value, bool notify = true) {
         Serial.printf("Sending %d value to the heater\n", value);
-        (void)heatingDevice.sendRelayCommand(value);
+        (void)heatingDevice.sendEsp01sRelayCommand((t_esp01sRelayState)value);
         Characteristic::CurrentHeatingCoolingState::setVal(value, notify);
+    }
+
+    template <class T=int>
+    T getVal() {
+        return(static_cast<T>(heatingDevice.getEsp01sRelayState()));
     }
 };
 
@@ -148,7 +150,7 @@ public:
         wasUpdated = false;
 
         /* In case of a sudden reset, turn of the Heating */
-        currentState->setVal(RELAY_COMMAND_OFF);
+        currentState->setVal(uint8_t(E_ESP01S_RELAY_OPEN));
         targetState->setVal((int)E_IDLE);
     }
 
@@ -239,9 +241,9 @@ public:
         bool toggle = heaterState;
 
         if (currentTemp <= (targetTemp - THERMOSTAT_HYSTERESIS) && heaterState == false) {
-            toggle = true;
+            toggle = (bool)E_ESP01S_RELAY_CLOSE;
         } else if (currentTemp >= (targetTemp + THERMOSTAT_HYSTERESIS) && heaterState == true) {
-            toggle = false;
+            toggle = (bool)E_ESP01S_RELAY_OPEN;
         } else {
             toggle = heaterState;
         }
@@ -255,9 +257,9 @@ public:
         bool toggle = heaterState;
 
         if (currentTemp <= (minTemp - THERMOSTAT_HYSTERESIS) && heaterState == false) {
-            toggle = true;
+            toggle = (bool)E_ESP01S_RELAY_CLOSE;
         } else if (currentTemp >= (maxTemp + THERMOSTAT_HYSTERESIS) && heaterState == true) {
-            toggle = false;
+            toggle = (bool)E_ESP01S_RELAY_OPEN;
         } else {
             toggle = heaterState;
         }

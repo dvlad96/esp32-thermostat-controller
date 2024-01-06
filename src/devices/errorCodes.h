@@ -18,12 +18,6 @@ typedef enum {
     E_REQUEST_FAILURE = 1U              /**< HTTP Request failure */
 } t_httpErrorCodes;
 
-/** @brief This enum represents all the possible ESP-NOW Error codes */
-typedef enum {
-    E_COMMAND_SUCCESS = 0U,             /**< ESP-Now Command success */
-    E_COMMAND_FAILURE = 1U              /**< ESP-Now Command failure */
-} t_espNowErrorCodes;
-
 /************************************************
  *  Public function definition
  ***********************************************/

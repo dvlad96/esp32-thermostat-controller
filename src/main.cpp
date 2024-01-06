@@ -9,7 +9,7 @@
 #include "homeKitAccessories/airConditioner.h"
 #include "homeKitAccessories/tempHumSensor.h"
 #include "devices/daikin.h"
-#include "devices/heatingRelay.h"
+#include "devices/esp01sRelay.h"
 #include "devices/deviceInfo.h"
 
 /* Private files */
@@ -62,15 +62,16 @@ void setup() {
         new HS_Thermostat();
 
     /* 3. Living Room AC */
-    new SpanAccessory();
-        new Service::AccessoryInformation();
-            new Characteristic::Name(DAIKIN_AC_NAME);
-            new Characteristic::Manufacturer(DAIKIN_AC_MANUFACTURER);
-            new Characteristic::Model(DAIKIN_AC_MODEL);
-            new Characteristic::SerialNumber(DAIKIN_AC_SERIAL_NUM);
-            new Characteristic::FirmwareRevision(DAIKIN_AC_FIRMWARE);
-            new Characteristic::Identify();
-        new HS_AirConditioner();
+    /* Don't use for the moment */
+    // new SpanAccessory();
+    //     new Service::AccessoryInformation();
+    //         new Characteristic::Name(DAIKIN_AC_NAME);
+    //         new Characteristic::Manufacturer(DAIKIN_AC_MANUFACTURER);
+    //         new Characteristic::Model(DAIKIN_AC_MODEL);
+    //         new Characteristic::SerialNumber(DAIKIN_AC_SERIAL_NUM);
+    //         new Characteristic::FirmwareRevision(DAIKIN_AC_FIRMWARE);
+    //         new Characteristic::Identify();
+    //     new HS_AirConditioner();
 
     /* 4. Living Room Temperature & Humidity Sensor */
     new SpanAccessory();

@@ -1,6 +1,9 @@
 /************************************************
  *  Includes
  ***********************************************/
+#include <string>
+
+/* Local files */
 #include "esp01sRelay.h"
 
 /************************************************
@@ -12,7 +15,10 @@
 /** @brief Number of retires in case initialization failed */
 #define ESP_NOW_NB_RETRIES              (10U)
 
+/** @brief HTTP Success code */
 #define HTTP_RESPONSE_SUCCESS           (200)
+
+/** @brief HTTP BAD Request code */
 #define HTTP_RESPONSE_BAD_REQUEST       (400)
 
 /************************************************
@@ -26,7 +32,6 @@
 /************************************************
  *  Public Method Implementation
  ***********************************************/
-
 t_httpErrorCodes esp01sRelay::sendEsp01sRelayCommand(const t_esp01sRelayState command) {
 
     String url = httpCommand;
@@ -36,41 +41,38 @@ t_httpErrorCodes esp01sRelay::sendEsp01sRelayCommand(const t_esp01sRelayState co
     if (command == E_ESP01S_RELAY_OPEN) {
         url += String(RELAY_OPEN_COMMAND);
     } else {
-        url += String(RELAY_CLOSE_COMMAND)
+        url += String(RELAY_CLOSE_COMMAND);
     }
 
-    http->begin(url);
-    httpCode = http->GET();
+    http.begin(url);
+    httpCode = http.GET();
     if (httpCode == HTTP_RESPONSE_SUCCESS) {
         error = E_REQUEST_SUCCESS;
     } else {
-        Serial.printf("Tried to send %s and client responded with HTTP Code: %d\n", command.c_str(), httpCode);
+        Serial.printf("Tried to send a command and client responded with HTTP Code: %d\n", httpCode);
     }
 
-    http->end();
-
+    http.end();
     return (error);
 }
 
 t_esp01sRelayState esp01sRelay::getEsp01sRelayState(void) {
 
     String url = httpCommand + "/relay_status";
-    String response;
+    uint8_t response;
     int httpCode;
 
-    http->begin(url);
-    httpCode = http->GET();
+    http.begin(url);
+    httpCode = http.GET();
     if (httpCode == HTTP_RESPONSE_SUCCESS) {
-        error = E_REQUEST_SUCCESS;
-        response = http.getString();
+        response = std::stoul(http.getString().c_str());
 
-        internalRelayState = (t_esp01sRelayState)std::stoul(response);
+        internalRelayState = (t_esp01sRelayState)response;
     } else {
         Serial.printf("Failed to retrieve relay status\n");
     }
 
-    http->end();
-
+    http.end();
     return (internalRelayState);
 
 }

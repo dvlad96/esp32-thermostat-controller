@@ -6,6 +6,7 @@
  ***********************************************/
 #include "Arduino.h"
 #include <esp_now.h>
+#include <HTTPClient.h>
 
 /* Local files */
 #include "private/espNowInfo.h"
@@ -14,8 +15,10 @@
 /************************************************
  *  Defines / Macros
  ***********************************************/
+/** @brief Relay HTTP GET close command */
 #define RELAY_CLOSE_COMMAND     ("/relay_command?val=1")
 
+/** @brief Relay HTTP GET open command */
 #define RELAY_OPEN_COMMAND      ("/relay_command?val=0")
 
 /************************************************
@@ -24,8 +27,8 @@
 
 /** @brief ESP-01S Relay State */
 typedef enum {
-    E_ESP01S_RELAY_OPEN  = 0U,                    /**< ESP-01S Relay OFF */
-    E_ESP01S_RELAY_CLOSE = 1U                     /**< ESP-01S Relay ON */
+    E_ESP01S_RELAY_OPEN  = 0U,                    /**< ESP-01S Relay Open */
+    E_ESP01S_RELAY_CLOSE = 1U                     /**< ESP-01S Relay Close */
 } t_esp01sRelayState;
 
 /************************************************
@@ -49,7 +52,7 @@ private:
 public:
     /** @brief Constructor */
     esp01sRelay(const String relayIpAddress, const uint8_t portId) {
-        relayState = E_ESP01S_RELAY_OPEN;
+        internalRelayState = E_ESP01S_RELAY_OPEN;
         httpCommand = "http://" + relayIpAddress + ":" + String(portId);
     }
 
@@ -68,6 +71,7 @@ public:
      * @brief Get the Esp01s Relay State
      * @details
      *  This function is used to retrieve the status of the ESP-01S Relay using HTTP GET commands
+     *
      * @return t_esp01sRelayState
      */
     t_esp01sRelayState getEsp01sRelayState(void);
