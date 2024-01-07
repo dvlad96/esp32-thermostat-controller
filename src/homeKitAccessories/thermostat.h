@@ -7,7 +7,6 @@
 #include "HomeSpan.h"
 
 /* Local files */
-#include "devices/daikin.h"
 #include "devices/esp01sRelay.h"
 #include "homeKitAccessories/tempHumSensor.h"
 
@@ -70,10 +69,10 @@ public:
         Characteristic::CurrentHeatingCoolingState::setVal(value, notify);
     }
 
-    template <class T=int>
-    T getVal() {
-        return(static_cast<T>(heatingDevice.getEsp01sRelayState()));
-    }
+    // template <class T=int>
+    // T getVal() {
+    //     return(static_cast<T>(heatingDevice.getEsp01sRelayState()));
+    // }
 };
 
 struct HS_Thermostat : Service::Thermostat {
@@ -106,6 +105,8 @@ private:
 
     /** @brief Variable used to track the millis passed since last thermostat overall update */
     unsigned long lastUpdateState;
+
+    t_esp01sRelayState lastKnownRelayState;
 
 public:
     /** @brief Constructor */
@@ -151,6 +152,7 @@ public:
 
         /* In case of a sudden reset, turn of the Heating */
         currentState->setVal(uint8_t(E_ESP01S_RELAY_OPEN));
+        lastKnownRelayState = E_ESP01S_RELAY_OPEN;
         targetState->setVal((int)E_IDLE);
     }
 

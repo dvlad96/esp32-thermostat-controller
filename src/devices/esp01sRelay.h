@@ -5,7 +5,6 @@
  *  Includes
  ***********************************************/
 #include "Arduino.h"
-#include <esp_now.h>
 #include <HTTPClient.h>
 
 /* Local files */
@@ -73,7 +72,7 @@ public:
      *
      * @return t_esp01sRelayState
      */
-    t_esp01sRelayState getEsp01sRelayState(void);
+    t_httpErrorCodes getEsp01sRelayState(t_esp01sRelayState * const relayState);
 };
 
 #endif /* ESP_01_S_RELAY_H */

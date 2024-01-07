@@ -56,9 +56,10 @@ t_httpErrorCodes esp01sRelay::sendEsp01sRelayCommand(const t_esp01sRelayState co
     return (error);
 }
 
-t_esp01sRelayState esp01sRelay::getEsp01sRelayState(void) {
+t_httpErrorCodes esp01sRelay::getEsp01sRelayState(t_esp01sRelayState * const relayState) {
 
     String url = httpCommand + "/relay_status";
+    t_httpErrorCodes error = E_REQUEST_FAILURE;
     uint8_t response;
     int httpCode;
 
@@ -68,12 +69,14 @@ t_esp01sRelayState esp01sRelay::getEsp01sRelayState(void) {
         response = std::stoul(http.getString().c_str());
 
         internalRelayState = (t_esp01sRelayState)response;
+        *relayState = internalRelayState;
+        error = E_REQUEST_SUCCESS;
     } else {
         Serial.printf("Failed to retrieve relay status\n");
     }
 
     http.end();
-    return (internalRelayState);
+    return (error);
 
 }
 /************************************************
