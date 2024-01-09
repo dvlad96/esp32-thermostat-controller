@@ -168,7 +168,6 @@ public:
 
         /* Update temperature every given duration */
         if ((millis() - lastSenseTemperature) > TEMPERATURE_SENSOR_POLLING_TIME) {
-            WEBLOG("New temperature read from the sensor");
             updateTempReading();
             lastSenseTemperature = millis();
         }
@@ -181,7 +180,6 @@ public:
 
         /* Update state every given duration */
         if ((millis() - lastUpdateState) > THERMOSTAT_STATUS_UPDATE_POLLING_TIME || wasUpdated) {
-            WEBLOG("Check for state update");
             updateState();
             wasUpdated = false;
             lastUpdateState = millis();
@@ -198,16 +196,16 @@ public:
         switch (targetState->getVal()) {
             case E_THERMOSTAT_STATE_OFF:
                 toggle = (bool)E_ESP01S_RELAY_OPEN;
-                WEBLOG("Thermostat is now OFF");
+                WEBLOG("State: OFF");
                 break;
             case E_THERMOSTAT_STATE_HEAT:
                 toggle = toggleManualHeaterState(averageTemp, targetTemp->getVal<float>(), heaterState);
-                WEBLOG("Thermostat is now set to HEAT mode");
+                WEBLOG("State: HEAT mode");
                 break;
             case E_THERMOSTAT_STATE_AUTO:
             default:
                 toggle = toggleAutoHeaterState(averageTemp, coolingThreshold->getVal<float>(), heatingThreshold->getVal<float>(), heaterState);
-                WEBLOG("Thermostat is now set to AUTO mode");
+                WEBLOG("State: AUTO mode");
         }
 
         if (toggle != heaterState) {
@@ -226,14 +224,13 @@ public:
             (reading <= TEMPERATURE_DEFAULT_MAX_VAL)) {
             averageTemp *= TEMPERATURE_ALPHA;
             averageTemp += (1 - TEMPERATURE_ALPHA) * reading;
-            WEBLOG("New temperature readout: %f", averageTemp);
+            WEBLOG("New temperature average: %f", averageTemp);
         }
     }
 
     /* Update the current temperature from accumulated readings */
     void updateCurrentTemp() {
         currentTemp->setVal<float>(averageTemp);
-        WEBLOG("Updated the current temperature with the value %f", averageTemp);
     }
 
     /* Manual mode Heater Control */
