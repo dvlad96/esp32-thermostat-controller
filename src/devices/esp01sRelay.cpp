@@ -32,10 +32,10 @@
 /************************************************
  *  Public Method Implementation
  ***********************************************/
-t_httpErrorCodes esp01sRelay::sendEsp01sRelayCommand(const t_esp01sRelayState command) {
+t_httpErrorCodes Esp01sRelay::sendEsp01sRelayCommand(const t_esp01sRelayState command) {
 
+    HTTPClient http;
     String url = httpCommand;
-    int httpCode;
     t_httpErrorCodes error = E_REQUEST_FAILURE;
 
     if (command == E_ESP01S_RELAY_OPEN) {
@@ -44,40 +44,49 @@ t_httpErrorCodes esp01sRelay::sendEsp01sRelayCommand(const t_esp01sRelayState co
         url += String(RELAY_CLOSE_COMMAND);
     }
 
-    http.begin(url);
-    httpCode = http.GET();
-    if (httpCode == HTTP_RESPONSE_SUCCESS) {
-        error = E_REQUEST_SUCCESS;
+    Serial.printf("Sending the command: %s\n", url.c_str());
+
+    if (http.begin(url) == true) {
+        int httpCode = http.GET();
+        if (httpCode == HTTP_RESPONSE_SUCCESS) {
+            Serial.println("Relay request success");
+            error = E_REQUEST_SUCCESS;
+        } else {
+            Serial.printf("Tried to send a command and client responded with HTTP Code: %d\n", httpCode);
+        }
+        http.end();
     } else {
-        Serial.printf("Tried to send a command and client responded with HTTP Code: %d\n", httpCode);
+        Serial.println("Failed to begin HTTP request");
     }
 
-    http.end();
     return (error);
 }
 
-t_httpErrorCodes esp01sRelay::getEsp01sRelayState(t_esp01sRelayState * const relayState) {
+t_httpErrorCodes Esp01sRelay::getEsp01sRelayState(t_esp01sRelayState * const relayState) {
 
+    HTTPClient http;
     String url = httpCommand + "/relay_status";
     t_httpErrorCodes error = E_REQUEST_FAILURE;
     uint8_t response;
     int httpCode;
 
-    http.begin(url);
-    httpCode = http.GET();
-    if (httpCode == HTTP_RESPONSE_SUCCESS) {
-        response = std::stoul(http.getString().c_str());
+    if (http.begin(url) == true) {
+        httpCode = http.GET();
+        if (httpCode == HTTP_RESPONSE_SUCCESS) {
+            response = std::stoul(http.getString().c_str());
 
-        internalRelayState = (t_esp01sRelayState)response;
-        *relayState = internalRelayState;
-        error = E_REQUEST_SUCCESS;
+            internalRelayState = (t_esp01sRelayState)response;
+            *relayState = internalRelayState;
+            error = E_REQUEST_SUCCESS;
+        } else {
+            Serial.printf("Failed to retrieve relay status\n");
+        }
+        http.end();
     } else {
-        Serial.printf("Failed to retrieve relay status\n");
+        Serial.println("Failed to begin HTTP request");
     }
 
-    http.end();
     return (error);
-
 }
 /************************************************
  *  Private Method implementation

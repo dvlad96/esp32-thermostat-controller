@@ -5,10 +5,10 @@
  *  Includes
  ***********************************************/
 #include "HomeSpan.h"
-#include "DHT.h"
 
 /* Local files */
 #include "devices/deviceInfo.h"
+#include "devices/adafruitAht20.h"
 
 /************************************************
  *  Defines / Macros
@@ -26,59 +26,29 @@ private:
     /** @brief Temperature Characteristic */
     SpanCharacteristic * temp;
 
-    /** @brief DHT Temperature Object */
-    DHT tempSensor{DHT_PIN, DHT_TYPE};
+    /** @brief TempHumSensor Object */
+    TempHumSensor tempSensor;
 
 public:
     /** @brief Constructor */
     HS_TempSensor() : Service::TemperatureSensor() {
-        /* Initialize the DHT Sensor */
-        tempSensor.begin();
+        /* Initialize the Temperature & Humidity Sensor */
+        (void)tempSensor.initializeSensor();
 
         /* Get the initial temperature */
-        temp = new Characteristic::CurrentTemperature(tempSensor.readTemperature());
+        temp = new Characteristic::CurrentTemperature(TEMPERATURE_INITIAL_VALUE);
 
         /* Set default values for temperature and humidity ranges */
-        setTempRange(DHT_TEMPERATURE_DEFAULT_MIN_VAL, DHT_TEMPERATURE_DEFAULT_MAX_VAL);
+        temp->setRange(TEMPERATURE_DEFAULT_MIN_VAL, TEMPERATURE_DEFAULT_MAX_VAL);
     }
 
     /** @brief Loop function override */
     void loop() override {
-
-        /* if it has been a while since last update */
+        /* If it has been a while since last update */
         if (temp->timeVal() > TEMPERATURE_SENSOR_POLLING_TIME) {
-
-            /* Set the temperature & humidity */
-            temp->setVal(tempSensor.readTemperature());
+            /* Set the temperature */
+            temp->setVal(tempSensor.getCurrentTemperature());
         }
-    }
-
-    /**
-     * @brief Set Temp Range method
-     * @details
-     *  Set the temperature range
-     *
-     * @param min   min temperature threshold
-     * @param max   max temperature threshold
-     */
-    void setTempRange(float min, float max) {
-        float minTempVal = 0;
-        float maxTempVal = 0;
-
-        /* Check for min and max range */
-        if (min < DHT_TEMPERATURE_DEFAULT_MIN_VAL) {
-            minTempVal = DHT_TEMPERATURE_DEFAULT_MIN_VAL;
-        } else {
-            minTempVal = min;
-        }
-
-        if (max > DHT_TEMPERATURE_DEFAULT_MAX_VAL) {
-            maxTempVal = DHT_TEMPERATURE_DEFAULT_MAX_VAL;
-        } else {
-            maxTempVal = max;
-        }
-
-        temp->setRange(minTempVal, maxTempVal);
     }
 };
 

@@ -1,20 +1,20 @@
 /*********************************************************************************
  *  MIT License
- *  
+ *
  *  Copyright (c) 2020-2023 Gregg E. Berman
- *  
+ *
  *  https://github.com/HomeSpan/HomeSpan
- *  
+ *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
  *  in the Software without restriction, including without limitation the rights
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *  
+ *
  *  The above copyright notice and this permission notice shall be included in all
  *  copies or substantial portions of the Software.
- *  
+ *
  *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -22,7 +22,7 @@
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  *  SOFTWARE.
- *  
+ *
  ********************************************************************************/
 
 ///////////////////////////////////
@@ -48,7 +48,7 @@ namespace Service {
     OPT(Name);
     OPT(SerialNumber);
     OPT(HardwareRevision);
-    OPT(AccessoryFlags);    
+    OPT(AccessoryFlags);
   END_SERV
 
   CREATE_SERV(AirPurifier,BB)
@@ -201,7 +201,7 @@ namespace Service {
     OPT(StatusActive);
     OPT(StatusFault);
     OPT(StatusTampered);
-    OPT(StatusLowBattery);   
+    OPT(StatusLowBattery);
   END_SERV
 
   CREATE_SERV(InputSource,D9)
@@ -226,7 +226,7 @@ namespace Service {
     OPT(StatusActive);
     OPT(StatusFault);
     OPT(StatusTampered);
-    OPT(StatusLowBattery);       
+    OPT(StatusLowBattery);
   END_SERV
 
   CREATE_SERV(LightBulb,43)
@@ -244,7 +244,7 @@ namespace Service {
     OPT(StatusActive);
     OPT(StatusFault);
     OPT(StatusTampered);
-    OPT(StatusLowBattery);          
+    OPT(StatusLowBattery);
   END_SERV
 
   CREATE_SERV(LockMechanism,45)
@@ -265,7 +265,7 @@ namespace Service {
     OPT(StatusActive);
     OPT(StatusFault);
     OPT(StatusTampered);
-    OPT(StatusLowBattery);       
+    OPT(StatusLowBattery);
   END_SERV
 
   CREATE_SERV(OccupancySensor,86)
@@ -274,7 +274,7 @@ namespace Service {
     OPT(StatusActive);
     OPT(StatusFault);
     OPT(StatusTampered);
-    OPT(StatusLowBattery);         
+    OPT(StatusLowBattery);
   END_SERV
 
   CREATE_SERV(Outlet,47)
@@ -290,11 +290,11 @@ namespace Service {
     OPT(SecuritySystemAlarmType);
     OPT(StatusFault);
     OPT(StatusTampered);
-  END_SERV  
+  END_SERV
 
   CREATE_SERV(ServiceLabel,CC)
     REQ(ServiceLabelNamespace);
-  END_SERV  
+  END_SERV
 
   CREATE_SERV(Slat,B9)
     REQ(CurrentSlatState);
@@ -311,7 +311,7 @@ namespace Service {
     OPT(StatusActive);
     OPT(StatusFault);
     OPT(StatusTampered);
-    OPT(StatusLowBattery);             
+    OPT(StatusLowBattery);
   END_SERV
 
   CREATE_SERV(Speaker,113)
@@ -336,12 +336,12 @@ namespace Service {
       OPT(ConfiguredName);
       OPT(ActiveIdentifier);
       OPT(RemoteKey);
-      OPT(PowerModeSelection);      
+      OPT(PowerModeSelection);
   END_SERV
 
   CREATE_SERV(TelevisionSpeaker,113)
       REQ(VolumeControlType);
-      REQ(VolumeSelector);      
+      REQ(VolumeSelector);
   END_SERV
 
   CREATE_SERV(TemperatureSensor,8A)
@@ -390,7 +390,7 @@ namespace Service {
   CREATE_SERV(WindowCovering,8C)
     REQ(TargetPosition);
     REQ(CurrentPosition);
-    REQ(PositionState);   
+    REQ(PositionState);
     OPT(Name);
     OPT(HoldPosition);
     OPT(CurrentHorizontalTiltAngle);
@@ -427,7 +427,7 @@ namespace Characteristic {
   CREATE_CHAR(uint8_t,CarbonDioxideDetected,0,0,1);
   CREATE_CHAR(uint8_t,ChargingState,0,0,2);
   CREATE_CHAR(uint8_t,ClosedCaptions,0,0,1);
-  CREATE_CHAR(double,CoolingThresholdTemperature,10,10,35); 
+  CREATE_CHAR(double,CoolingThresholdTemperature,10,10,35);
   CREATE_CHAR(uint32_t,ColorTemperature,200,140,500);
   CREATE_CHAR(uint8_t,ContactSensorState,1,0,1);
   CREATE_CHAR(const char *,ConfiguredName,"unnamed",0,1);
@@ -492,7 +492,7 @@ namespace Characteristic {
   CREATE_CHAR(double,Saturation,0,0,100);
   CREATE_CHAR(uint8_t,SecuritySystemAlarmType,0,0,1);
   CREATE_CHAR(uint8_t,SecuritySystemCurrentState,3,0,4);
-  CREATE_CHAR(uint8_t,SecuritySystemTargetState,3,0,3); 
+  CREATE_CHAR(uint8_t,SecuritySystemTargetState,3,0,3);
   CREATE_CHAR(const char *,SerialNumber,"HS-12345",0,1);
   CREATE_CHAR(uint8_t,ServiceLabelIndex,1,1,255);
   CREATE_CHAR(uint8_t,ServiceLabelNamespace,1,0,1);
@@ -579,4 +579,4 @@ namespace Characteristic {
 
 
 
-  
+

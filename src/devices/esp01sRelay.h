@@ -7,9 +7,6 @@
 #include "Arduino.h"
 #include <HTTPClient.h>
 
-/* Local files */
-#include "errorCodes.h"
-
 /************************************************
  *  Defines / Macros
  ***********************************************/
@@ -22,11 +19,16 @@
 /************************************************
  *  Typedef definition
  ***********************************************/
+/** @brief This enum represents all the possible HTTP Requests failures*/
+typedef enum {
+    E_REQUEST_SUCCESS = 0U,             /**< HTTP Request success */
+    E_REQUEST_FAILURE = 1U              /**< HTTP Request failure */
+} t_httpErrorCodes;
 
 /** @brief ESP-01S Relay State */
 typedef enum {
-    E_ESP01S_RELAY_OPEN  = 0U,                    /**< ESP-01S Relay Open */
-    E_ESP01S_RELAY_CLOSE = 1U                     /**< ESP-01S Relay Close */
+    E_ESP01S_RELAY_OPEN  = 0U,          /**< ESP-01S Relay Open */
+    E_ESP01S_RELAY_CLOSE = 1U           /**< ESP-01S Relay Close */
 } t_esp01sRelayState;
 
 /************************************************
@@ -36,7 +38,7 @@ typedef enum {
  * @brief ESP-01S class definition.
  * @details This class is used to define a generic ESP-01S Relay
  */
-class esp01sRelay {
+class Esp01sRelay {
 private:
     /** @brief ESP-01S relay state */
     t_esp01sRelayState internalRelayState;
@@ -44,12 +46,9 @@ private:
     /** @brief URL Start */
     String httpCommand;
 
-    /** @brief HTTP Client Object */
-    HTTPClient http;
-
 public:
     /** @brief Constructor */
-    esp01sRelay(const String relayIpAddress, const uint8_t portId) {
+    Esp01sRelay(const String relayIpAddress, const uint8_t portId) {
         internalRelayState = E_ESP01S_RELAY_OPEN;
         httpCommand = "http://" + relayIpAddress + ":" + String(portId);
     }
