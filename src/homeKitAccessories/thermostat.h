@@ -18,7 +18,8 @@
 #define THERMOSTAT_DEFAULT_TARGET_HUMIDITY          (50U)
 
 /** @brief Temperature hysteresis */
-#define THERMOSTAT_HYSTERESIS                       (0.25)
+#define THERMOSTAT_AUTO_HYSTERESIS                  (0.1)
+#define THERMOSTAT_MANUAL_HYSTERESIS                (0.5)
 
 /** @brief Alpha for exponential average */
 #define TEMPERATURE_ALPHA                           (0.75)
@@ -224,22 +225,22 @@ public:
             (reading <= TEMPERATURE_DEFAULT_MAX_VAL)) {
             averageTemp *= TEMPERATURE_ALPHA;
             averageTemp += (1 - TEMPERATURE_ALPHA) * reading;
-            WEBLOG("New temperature average: %f", averageTemp);
         }
     }
 
     /* Update the current temperature from accumulated readings */
     void updateCurrentTemp() {
         currentTemp->setVal<float>(averageTemp);
+        WEBLOG("Current temperature = %f", averageTemp);
     }
 
     /* Manual mode Heater Control */
     bool toggleManualHeaterState(float currentTemp, float targetTemp, bool heaterState) {
         bool toggle = heaterState;
         /* Check the temperature range */
-        if (currentTemp <= (targetTemp - THERMOSTAT_HYSTERESIS) && heaterState == false) {
+        if (currentTemp <= (targetTemp - THERMOSTAT_MANUAL_HYSTERESIS) && heaterState == false) {
             toggle = (bool)E_ESP01S_RELAY_CLOSE;
-        } else if (currentTemp >= (targetTemp + THERMOSTAT_HYSTERESIS) && heaterState == true) {
+        } else if (currentTemp >= (targetTemp + THERMOSTAT_MANUAL_HYSTERESIS) && heaterState == true) {
             toggle = (bool)E_ESP01S_RELAY_OPEN;
         } else {
             toggle = heaterState;
@@ -252,9 +253,9 @@ public:
     bool toggleAutoHeaterState(float currentTemp, float minTemp, float maxTemp, bool heaterState) {
         bool toggle = heaterState;
         /* Check the temperature range */
-        if (currentTemp <= (minTemp - THERMOSTAT_HYSTERESIS) && heaterState == false) {
+        if (currentTemp <= (minTemp - THERMOSTAT_AUTO_HYSTERESIS) && heaterState == false) {
             toggle = (bool)E_ESP01S_RELAY_CLOSE;
-        } else if (currentTemp >= (maxTemp + THERMOSTAT_HYSTERESIS) && heaterState == true) {
+        } else if (currentTemp >= (maxTemp + THERMOSTAT_AUTO_HYSTERESIS) && heaterState == true) {
             toggle = (bool)E_ESP01S_RELAY_OPEN;
         } else {
             toggle = heaterState;

@@ -10,7 +10,7 @@
 /************************************************
  *  Typedef definition
  ***********************************************/
-
+#define TEMP_CALIBRATION_VALUE              (1.5f)
 /************************************************
  *  Static function implementation
  ***********************************************/
@@ -25,7 +25,7 @@ bool TempHumSensor::initializeSensor(void) {
 
 float TempHumSensor::getCurrentTemperature(void) {
     tempSensor.getEvent(&humEvent, &tempEvent);
-    return(tempEvent.temperature);
+    return(tempEvent.temperature - TEMP_CALIBRATION_VALUE);
 }
 
 float TempHumSensor::getCurrentHumidity(void) {

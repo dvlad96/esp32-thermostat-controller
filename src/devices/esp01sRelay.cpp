@@ -2,6 +2,7 @@
  *  Includes
  ***********************************************/
 #include <string>
+#include "HomeSpan.h"
 
 /* Local files */
 #include "esp01sRelay.h"
@@ -44,19 +45,19 @@ t_httpErrorCodes Esp01sRelay::sendEsp01sRelayCommand(const t_esp01sRelayState co
         url += String(RELAY_CLOSE_COMMAND);
     }
 
-    Serial.printf("Sending the command: %s\n", url.c_str());
+    WEBLOG("Sending the command: %s to the relay\n", url.c_str());
 
     if (http.begin(url) == true) {
         int httpCode = http.GET();
         if (httpCode == HTTP_RESPONSE_SUCCESS) {
-            Serial.println("Relay request success");
+            WEBLOG("Relay request success");
             error = E_REQUEST_SUCCESS;
         } else {
-            Serial.printf("Tried to send a command and client responded with HTTP Code: %d\n", httpCode);
+            WEBLOG("Tried to send a command and client responded with HTTP Code: %d\n", httpCode);
         }
         http.end();
     } else {
-        Serial.println("Failed to begin HTTP request");
+        WEBLOG("Failed to begin HTTP request");
     }
 
     return (error);
@@ -79,11 +80,11 @@ t_httpErrorCodes Esp01sRelay::getEsp01sRelayState(t_esp01sRelayState * const rel
             *relayState = internalRelayState;
             error = E_REQUEST_SUCCESS;
         } else {
-            Serial.printf("Failed to retrieve relay status\n");
+           WEBLOG("Failed to retrieve relay status\n");
         }
         http.end();
     } else {
-        Serial.println("Failed to begin HTTP request");
+        WEBLOG("Failed to begin HTTP request");
     }
 
     return (error);

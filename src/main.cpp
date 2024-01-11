@@ -7,6 +7,7 @@
 /* Local files */
 #include "homeKitAccessories/thermostat.h"
 #include "homeKitAccessories/tempHumSensor.h"
+#include "homeKitAccessories/relaySwitch.h"
 #include "devices/deviceInfo.h"
 
 /* Private files */
@@ -17,7 +18,7 @@
  ***********************************************/
 /** @brief Maximum number of log messages to save.
  *  As the log fills with messages, older ones are replaced by newer ones. */
-#define MAX_NB_LOG_MESSAGES_TO_SAVE             (20U)
+#define MAX_NB_LOG_MESSAGES_TO_SAVE             (25U)
 
 /************************************************
  *  Typedef definition
@@ -35,7 +36,7 @@ void setup() {
 
     /* Enable debug options */
     Serial.begin(115200);
-    homeSpan.enableWebLog(MAX_NB_LOG_MESSAGES_TO_SAVE, "pool.ntp.org", "UTC+2", "myLog");
+    homeSpan.enableWebLog(MAX_NB_LOG_MESSAGES_TO_SAVE, "pool.ntp.org", "UTC+4", "myLog");
     homeSpan.enableOTA();
 
     /* Create the pairing code */
@@ -70,6 +71,13 @@ void setup() {
             new Characteristic::FirmwareRevision(THERMOSTAT_FIRMWARE);
             new Characteristic::Identify();
         new HS_Thermostat();
+
+    /* 4. Heating relay - defined as switch */
+    new SpanAccessory();
+        new Service::AccessoryInformation();
+            new Characteristic::Name("Heating Relay");
+            new Characteristic::Identify();
+        new HS_RelaySwitch();
 }
 
 void loop() {
